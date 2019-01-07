@@ -61,3 +61,12 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+###############################################################################
+# behavior for code files
+#
+# Added by Bjarte
+# Suggestion found at "https://stackoverflow.com/questions/4735663/why-does-git-treat-some-cpp-files-as-binary"
+# Necessary to prevent cpp files being treated as binary files
+###############################################################################
+*.cpp crlf diff
