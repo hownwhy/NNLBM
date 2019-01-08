@@ -24,6 +24,8 @@ void createFolder(std::string path)
 
 
 void stringToFile(const std::string string, const std::string filename){	
+	createFolder(S_OUTPUT_DIRECTORY_BASE);
+	createFolder(S_OUTPUT_DIRECTORY_BASE + S_FLOW_TYPE);
 	createFolder(S_DIRECTORY_VELOCITY_OUTPUT);
 	std::ofstream myfile(S_DIRECTORY_VELOCITY_OUTPUT + filename);
 	std::string outputString = string;
@@ -35,7 +37,10 @@ void stringToFile(const std::string string, const std::string filename){
 		myfile << outputString;
 		myfile.close();
 	}
-	else std::cout << "Unable to open file";
+	else {
+		std::cout << "Unable to open file";
+		system("pause");
+	}
 }
 
 //void addGridPopulationsToString(const bool runIndex, const Grid& grid, std::string& populationsList) {

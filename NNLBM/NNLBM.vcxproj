@@ -26,6 +26,17 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BulkCell.hpp" />
+    <ClInclude Include="Cell.hpp" />
+    <ClInclude Include="Globals.hpp" />
+    <ClInclude Include="Grid.hpp" />
+    <ClInclude Include="Neighbours.hpp" />
+    <ClInclude Include="SolidCell.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{F5AE6FAC-A48B-47FD-B00B-3FA631BAE09F}</ProjectGuid>
