@@ -31,11 +31,11 @@ inline int reverseDirectionIndex(const int directionIndex) {
 	return (directionIndex + threeHalfDirection) % nDirections;
 }
 
-const int N_RUN = 10000;
-const int N_VELOCITY_PRINT_INTERVAL = 100;
-const int N_GRID_X_DIM = 10;
+const int N_RUN = 100000;
+const int N_VELOCITY_PRINT_INTERVAL = 10000;
+const int N_GRID_X_DIM = 20;
 const int N_GRID_Y_DIM = 100;
-const field_t F_TAU = 0.77;
+const field_t F_TAU = 1.00;
 const field_t F_BODY_FORCE_X = 1.00e-8;
 const field_t F_BODY_FORCE_Y = 0;
 
@@ -43,6 +43,8 @@ const field_t N_VELOCITY_MULTIPLICATION_FACTOR = 1;
 
 const std::string S_BC_BASED = "BCBased/";
 const std::string S_SHORT_TESTS = "ShortTests/";
+const std::string S_TAU_TESTS = "TauTests/";
+const std::string S_LENGTH_TESTS_2 = "LengthTests2/";
 
 const std::string S_FILE_NAME_BASE = "PoiseuilleFlow";
 const std::string S_OUTPUT_DIRECTORY_BASE = "SimulationOutput/";

@@ -208,9 +208,9 @@ public:
 	void gridInitialize(const bool runIndex) const {
 		const int xMargin = 1;
 		const int yMargin = 1;
-		const field_t rho = 1;
-		const field_t xVelocity = 0;
-		const field_t yVelocity = 0;
+		const field_t rho = 1.0;
+		const field_t xVelocity = 0.0;
+		const field_t yVelocity = 0.0;
 		//const 
 		for (int runIndex = 0; runIndex < 2; runIndex++) {
 			for (int y = yMargin; y < yDim - yMargin; y++) {

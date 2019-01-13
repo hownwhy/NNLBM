@@ -33,7 +33,7 @@ const static enum SimType : int {
 static const int nPopulations = 9;		// Number of poulations for species
 static const int nFieldDuplicates = 2;	// Number of field "duplicats" (for temporary storage)(probably no more than 2)
 static const int nDimensions = 2;		
-static const int dt = 1;
+static const field_t dt = 1;
 
 
 
@@ -47,8 +47,8 @@ static const int dt = 1;
 //static std::array<field_t, 2> force = { 0, 0 };
 
 // poiseuille flow
-static field_t tau = F_TAU;
-static std::array<field_t, 2> force = { F_BODY_FORCE_X, F_BODY_FORCE_Y };
+static const field_t tau = F_TAU;
+static const std::array<field_t, 2> force = { F_BODY_FORCE_X, F_BODY_FORCE_Y };
 
 
 
@@ -62,6 +62,7 @@ protected:
 	std::array<field_t, nFieldDuplicates> rho;
 	std::array<field_t, nFieldDuplicates * nDimensions> velocity;
 	std::array<field_t, nPopulations> sourceTerms;
+	std::array<field_t, nPopulations> forcePopulations;
 	
 
 public:
@@ -120,6 +121,8 @@ public:
 	// TODO: Use other relaxation times
 	// TODO: put correct source term in call to "comouteVelocity"
 	void collide(const bool runIndex) {
+
+		//static int counter = 0;
 		//std::cout << "collide" << std::endl;
 		computeRho(runIndex);
 		computeVelocity(runIndex, force);
@@ -129,48 +132,90 @@ public:
 			populations[getArrayIndex(runIndex, cellDirection)]
 				= populations[getArrayIndex(runIndex, cellDirection)] - dt * (populations[getArrayIndex(runIndex, cellDirection)] - populationsEq[getArrayIndex(runIndex, cellDirection)]) / tau;
 			// Add force term
-			populations[getArrayIndex(runIndex, cellDirection)] += sourceTerms[cellDirection];
+			populations[getArrayIndex(runIndex, cellDirection)] += ((1.0 - (dt / (2 * tau))) * forcePopulations[cellDirection]);
+			
+			/*if (counter % 10000 == 0) {
+				std::cout << "\nsourceTerm[" << cellDirection << "] = " << (1.0 - (1.0 / (2 * tau))) * forcePopulations[cellDirection];
+				system("pause");
+			}*/
 		}
+		//counter++;
+		
 	}
 
 	virtual void collideAndPropagate(const bool runIndex) = 0;
 
+	//void computeSourceTerm(const int runIndex) {
+	//	static const field_t weightR = 4 / 9;
+	//	static const field_t weightHV = 1 / 9;
+	//	static const field_t weightD = 1 / 36;
+	//	static const field_t dtTauFactorR = 2 * (dt - 2 * tau) / (3 * tau);
+	//	static const field_t dtTauFactorHV = (dt - 2 * tau) / (6 * tau);
+	//	static const field_t dtTauFactorD = (dt - 2 * tau) / (24 * tau);
+	//	static const std::array<field_t, 2> force;
+	//	static const field_t Fx = force[SpatialDirection::x];
+	//	static const field_t Fy = force[SpatialDirection::y];
+	//	static const field_t ux = velocity[SpatialDirection::x];
+	//	static const field_t uy = velocity[SpatialDirection::y];
+	//	static const field_t FxUx = Fx * ux;
+	//	static const field_t FxUy = Fx * uy;
+	//	static const field_t FyUy = Fy * uy;
+	//	static const field_t FyUx = Fy * ux;
+
+
+	//	for (int populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
+
+	//		// Calculate the rest source field component
+	//		sourceTerms[CellDirection::rest] = dtTauFactorR * (FxUx + FyUy);
+
+	//		// Calculate horizontal and vertical source field components
+	//		sourceTerms[CellDirection::east] = dtTauFactorHV * (FyUy - 2 * FxUx - Fx);
+	//		sourceTerms[CellDirection::north] = dtTauFactorHV * (FxUx - 2 * FyUy - Fy);
+	//		sourceTerms[CellDirection::west] = dtTauFactorHV * (FyUy - 2 * FxUx + Fx);
+	//		sourceTerms[CellDirection::south] = dtTauFactorHV * (FxUx - 2 * FyUy + Fy);
+
+	//		// Calculate diagonal source field components
+	//		sourceTerms[CellDirection::northEast] = -dtTauFactorD * (Fx + Fy + 2 * FxUx + 3 * FyUx + 3 * FxUy + 2 * FyUy);
+	//		sourceTerms[CellDirection::northWest] = -dtTauFactorD * (-Fx + Fy + 2 * FxUx - 3 * FyUx - 3 * FxUy + 2 * FyUy);
+	//		sourceTerms[CellDirection::southWest] = -dtTauFactorD * (-Fx - Fy + 2 * FxUx + 3 * FyUx + 3 * FxUy + 2 * FyUy);
+	//		sourceTerms[CellDirection::southEast] = -dtTauFactorD * (Fx - Fy + 2 * FxUx - 3 * FyUx - 3 * FxUy + 2 * FyUy);
+
+	//	}
+	//}
+
 	void computeSourceTerm(const int runIndex) {
-		static const field_t weightR = 4 / 9;
-		static const field_t weightHV = 1 / 9;
-		static const field_t weightD = 1 / 36;
-		static const field_t dtTauFactorR = 2 * (dt - 2 * tau) / (3 * tau);
-		static const field_t dtTauFactorHV = (dt - 2 * tau) / (6 * tau);
-		static const field_t dtTauFactorD = (dt - 2 * tau) / (24 * tau);
-		static const std::array<field_t, 2> force;
+		static const field_t weightHV = 1. / 3;
+		static const field_t weightD = 1. / 12;
+		/*static const field_t dtTauFactorHV = ((2 * tau) - dt) / (6 * tau);
+		static const field_t dtTauFactorD = (2 * tau - dt) / (24 * tau);*/
 		static const field_t Fx = force[SpatialDirection::x];
 		static const field_t Fy = force[SpatialDirection::y];
-		static const field_t ux = velocity[SpatialDirection::x];
-		static const field_t uy = velocity[SpatialDirection::y];
-		static const field_t FxUx = Fx * ux;
-		static const field_t FxUy = Fx * uy;
-		static const field_t FyUy = Fy * uy;
-		static const field_t FyUx = Fy * ux;
+		static field_t ux = velocity[SpatialDirection::x];
+		static field_t uy = velocity[SpatialDirection::y];
+		static field_t FxUx = Fx * ux;
+		static field_t FxUy = Fx * uy;
+		static field_t FyUy = Fy * uy;
+		static field_t FyUx = Fy * ux;
 
 
-		for (int populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
+		// Calculate horizontal and vertical source field components
+		forcePopulations[CellDirection::east] = weightHV * (2 * Fx + 3 * FxUx);
+		forcePopulations[CellDirection::north] = weightHV * (2 * Fy + 3 * FyUy);
+		forcePopulations[CellDirection::west] = weightHV * (-2 * Fx + 3 * FxUx);
+		forcePopulations[CellDirection::south] = weightHV * (-2 * Fy + 3 * FyUy);
 
-			// Calculate the rest source field component
-			sourceTerms[CellDirection::rest] = dtTauFactorR * (FxUx + FyUy);
+		// Calculate diagonal source field components
+		forcePopulations[CellDirection::northEast] = weightD * (2 * Fx + 2 * Fy + 3 * FxUx + 3 * FyUx + 3 * FxUy + 3 * FyUy);
+		forcePopulations[CellDirection::northWest] = -weightD * (2 * Fx - 2 * Fy - 3 * FxUx + 3 * FyUx + 3 * FxUy - 3 * FyUy);
+		forcePopulations[CellDirection::southWest] = weightD * (-2 * Fx - 2 * Fy + 3 * FxUx + 3 * FyUx + 3 * FxUy + 3 * FyUy);
+		forcePopulations[CellDirection::southEast] = -weightD * (-2 * Fx + 2 * Fy - 3 * FxUx + 3 * FyUx + 3 * FxUy - 3 * FyUy);
 
-			// Calculate horizontal and vertical source field components
-			sourceTerms[CellDirection::east] = dtTauFactorHV * (FyUy - 2 * FxUx - Fx);
-			sourceTerms[CellDirection::north] = dtTauFactorHV * (FxUx - 2 * FyUy - Fy);
-			sourceTerms[CellDirection::west] = dtTauFactorHV * (FyUy - 2 * FxUx + Fx);
-			sourceTerms[CellDirection::south] = dtTauFactorHV * (FxUx - 2 * FyUy + Fy);
-
-			// Calculate diagonal source field components
-			sourceTerms[CellDirection::northEast] = -dtTauFactorD * (Fx + Fy + 2 * FxUx + 3 * FyUx + 3 * FxUy + 2 * FyUy);
-			sourceTerms[CellDirection::northWest] = -dtTauFactorD * (-Fx + Fy + 2 * FxUx - 3 * FyUx - 3 * FxUy + 2 * FyUy);
-			sourceTerms[CellDirection::southWest] = -dtTauFactorD * (-Fx - Fy + 2 * FxUx + 3 * FyUx + 3 * FxUy + 2 * FyUy);
-			sourceTerms[CellDirection::southEast] = -dtTauFactorD * (Fx - Fy + 2 * FxUx - 3 * FyUx - 3 * FxUy + 2 * FyUy);
-
-		}
+		//for (int cellDirection = 0; cellDirection < 9; cellDirection++){
+		//	//std::cout << "\nforcePopulations[" << CellDirection::east << "] = " << weightHV;
+		//	std::cout << "\nux: " << ux << ",  uy: " << uy << ",  Fx: " << Fx << ",  forcePopulations[" << cellDirection << "] = " << (1.0 - (1.0 / (2 * tau))) * forcePopulations[cellDirection] << std::endl;
+		//}
+		//system("pause");
+		
 	}
 
 	void computeRho(const bool runIndex) {
@@ -193,7 +238,7 @@ public:
 				populations[getArrayIndex(runIndex, CellDirection::southEast)] -
 				populations[getArrayIndex(runIndex, CellDirection::west)] -
 				populations[getArrayIndex(runIndex, CellDirection::northWest)] -
-				populations[getArrayIndex(runIndex, CellDirection::southWest)]) / rho[runIndex]) + bodyForce[SpatialDirection::x]/(2 * rho[runIndex]);
+				populations[getArrayIndex(runIndex, CellDirection::southWest)]) / rho[runIndex]) + bodyForce[SpatialDirection::x] / (2 * rho[runIndex]);
 
 		velocity[runIndex * nDimensions + SpatialDirection::y] =
 			((populations[getArrayIndex(runIndex, CellDirection::north)] +
@@ -212,6 +257,9 @@ public:
 		field_t uxuy = ux * uy;
 		field_t uSqr = uxSqr + uySqr;
 
+		//static int counter = 0;
+
+
 		// Weights
 		field_t weightR	= (2 * rho[runIndex]) / 9;	// Rest
 		field_t weightHV	= rho[runIndex] / 18;	// Horizontal/Vertical
@@ -221,16 +269,31 @@ public:
 		populationsEq[getArrayIndex(runIndex, CellDirection::rest)] = weightR * (2 - (3 * uSqr));
 
 		// Calculate horizontal and vertical equlibrium field components
-		populationsEq[getArrayIndex(runIndex, CellDirection::east)]	= weightHV * (2 + (6 * ux) + (9 * uxSqr) - (3 * uSqr));
-		populationsEq[getArrayIndex(runIndex, CellDirection::north)]	= weightHV * (2 + (6 * uy) + (9 * uySqr) - (3 * uSqr));
-		populationsEq[getArrayIndex(runIndex, CellDirection::west)]	= weightHV * (2 - (6 * ux) + (9 * uxSqr) - (3 * uSqr));
-		populationsEq[getArrayIndex(runIndex, CellDirection::south)] = weightHV * (2 - (6 * uy) + (9 * uySqr) - (3 * uSqr));
+		populationsEq[getArrayIndex(runIndex, CellDirection::east)]	= weightHV * (2 + (6 * ux) + (6 * uxSqr) - (3 * uySqr));
+		populationsEq[getArrayIndex(runIndex, CellDirection::north)]= weightHV * (2 + (6 * uy) + (6 * uySqr) - (3 * uxSqr));
+		populationsEq[getArrayIndex(runIndex, CellDirection::west)]	= weightHV * (2 - (6 * ux) + (6 * uxSqr) - (3 * uySqr));
+		populationsEq[getArrayIndex(runIndex, CellDirection::south)] = weightHV * (2 - (6 * uy) + (6 * uySqr) - (3 * uxSqr));
 
 		// Calculate diagonal equlibrium field components
 		populationsEq[getArrayIndex(runIndex, CellDirection::northEast)] = weightD * (1 + (3 * (ux + uy)) + (9 * uxuy) + (3 * uSqr));
 		populationsEq[getArrayIndex(runIndex, CellDirection::northWest)] = weightD * (1 - (3 * (ux - uy)) - (9 * uxuy) + (3 * uSqr));
 		populationsEq[getArrayIndex(runIndex, CellDirection::southWest)] = weightD * (1 - (3 * (ux + uy)) + (9 * uxuy) + (3 * uSqr));
 		populationsEq[getArrayIndex(runIndex, CellDirection::southEast)] = weightD * (1 + (3 * (ux - uy)) - (9 * uxuy) + (3 * uSqr));
+		
+		/*std::cout << "\nweightR = " << weightR;
+		std::cout << "\nweightHV = " << weightHV;
+		std::cout << "\nweightD = " << weightD << std::endl;
+		system("pause");*/
+
+		//if (counter % 10000 == 0) {
+		//	for (int populationIndex = 0; populationIndex < 9; populationIndex++) {
+		//		//std::cout << "\nforcePopulations[" << CellDirection::east << "] = " << weightHV;
+		//		std::cout << "\nux: " << ux << ",  uy: " << uy << ",  rho: " << rho[runIndex] << ",  populationsEq[" << populationIndex << "] = " << populationsEq[getArrayIndex(runIndex, populationIndex)] << std::endl;
+		//	}
+		//	system("pause");
+		//}
+		//counter++;
+	
 	}
 
 
