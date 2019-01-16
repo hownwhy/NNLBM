@@ -257,16 +257,26 @@ public:
 		return neighbours;
 	}
 
+	//const std::string getPopulationsList(const bool runIndex) {
+	//	std::string temp;
+	//	temp += "{" + std::to_string(populations[getArrayIndex(runIndex, 0)]);
+	//	for (int i = 1; i < nPopulations-1; i++) {
+	//		temp += ", " + std::to_string(populations[getArrayIndex(runIndex, i)]);
+	//		
+	//	}
+	//	
+	//	temp += ", " + std::to_string(populations[getArrayIndex(runIndex, nPopulations-1)]) + "}";
+	//	return temp;
+	//}
+
 	const std::string getPopulationsList(const bool runIndex) {
-		std::string temp;
-		temp += "{" + std::to_string(populations[getArrayIndex(runIndex, 0)]);
-		for (int i = 1; i < nPopulations-1; i++) {
-			temp += ", " + std::to_string(populations[getArrayIndex(runIndex, i)]);
-			
+		std::ostringstream populationsListStream;
+		populationsListStream << "{" << std::setprecision(9) << populations[getArrayIndex(runIndex, 0)];
+		for (int i = 1; i < nPopulations - 1; i++) {
+			populationsListStream << ", " << populations[getArrayIndex(runIndex, i)];
 		}
-		
-		temp += ", " + std::to_string(populations[getArrayIndex(runIndex, nPopulations-1)]) + "}";
-		return temp;
+		populationsListStream  << "}";
+		return populationsListStream.str();
 	}
 
 

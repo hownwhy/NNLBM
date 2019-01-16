@@ -22,16 +22,12 @@ void createFolder(std::string path)
 	}
 }
 
-
-void stringToFile(const std::string string, const std::string filename){	
-	createFolder(S_OUTPUT_DIRECTORY_BASE);
-	createFolder(S_OUTPUT_DIRECTORY_BASE + S_FLOW_TYPE);
-	createFolder(S_DIRECTORY_VELOCITY_OUTPUT);
-	std::ofstream myfile(S_DIRECTORY_VELOCITY_OUTPUT + filename);
+void stringListToFile(const std::string string, const std::string path, const std::string filename) {
+	std::ofstream myfile(path + filename);
 	std::string outputString = string;
 	outputString.insert(0, "{");
 	outputString.append("}");
-
+	
 	if (myfile.is_open())
 	{
 		myfile << outputString;
@@ -43,9 +39,27 @@ void stringToFile(const std::string string, const std::string filename){
 	}
 }
 
+void populationListToFile(const std::string string, const std::string filename) {
+	createFolder(S_OUTPUT_DIRECTORY_BASE);
+	createFolder(S_OUTPUT_DIRECTORY_BASE + S_POPULATION_OUTPUT_PATH_BASE);
+	createFolder(S_POPULATION_OUTPUT_FULL_PATH);	
+
+	stringListToFile(string, S_POPULATION_OUTPUT_FULL_PATH, filename);
+}
+
+
+void velocityListToFile(const std::string string, const std::string filename){	
+	createFolder(S_OUTPUT_DIRECTORY_BASE);
+	createFolder(S_OUTPUT_DIRECTORY_BASE + S_FLOW_TYPE);
+	createFolder(S_DIRECTORY_VELOCITY_OUTPUT);
+	
+	stringListToFile(string, S_DIRECTORY_VELOCITY_OUTPUT, filename);
+}
+
 void densityListToFile(const std::string string, const std::string filename) {
-	createFolder(S_DENSITY_OUTPUT_DIRECTORY_BASE);
-	std::ofstream myfile(S_DENSITY_OUTPUT_DIRECTORY_BASE + filename);
+	createFolder(S_OUTPUT_DIRECTORY_BASE);
+	createFolder(S_DENSITY_OUTPUT_FULL_PATH);
+	std::ofstream myfile(S_DENSITY_OUTPUT_FULL_PATH + filename);
 	std::string outputString = string;
 	outputString.insert(0, "{");
 	outputString.append("}");
@@ -169,9 +183,9 @@ int main() {
 	//grid.getCell(3, 3)->initializeVelocity(!runIndex, SpatialDirection::x, 0.4);
 	//grid.getCell(3, 3)->initializeVelocity(!runIndex, SpatialDirection::y, -0.4);
 
-	//grid.getCell(4, 1)->initializeVelocity(runIndex, SpatialDirection::x, 0.9);
+	//grid.getCell(2, 2)->initializeVelocity(runIndex, SpatialDirection::x, 0.9);
 	//grid.getCell(5, 4)->initializeVelocity(!runIndex, SpatialDirection::x, -0.9);
-	//grid.getCell(1, 4)->initializeVelocity(runIndex, SpatialDirection::y, -0.9);
+	//grid.getCell(3, 2)->initializeVelocity(runIndex, SpatialDirection::y, -0.9);
 	//grid.getCell(4, 5)->initializeVelocity(!runIndex, SpatialDirection::y, 0.9);
 	
 
@@ -202,15 +216,15 @@ int main() {
 		grid.collide(runIndex);
 		if (run % printInterval == 0) {
 			std::cout << "\r Processing: " << run << " of " << nRun;
-			/*grid.appendGridPolulationsList(runIndex, populationOutputString);
-			stringToFile(populationOutputString, "population.txt");*/
+			grid.appendGridPolulationsList(runIndex, populationOutputString);
+			populationListToFile(populationOutputString, "population.txt");
 			/*std::cout << velocityString;
 			system("pause");*/
 			grid.appendGridVelocityList(runIndex, velocityString);			
-			stringToFile(velocityString, velocityFileName);
+			velocityListToFile(velocityString, velocityFileName);
 
-			grid.appendGridDensityList(runIndex, densityString);
-			densityListToFile(densityString, densityFileName);
+			//grid.appendGridDensityList(runIndex, densityString);
+			//densityListToFile(densityString, densityFileName);
 
 		}
 		grid.propagate(runIndex);
