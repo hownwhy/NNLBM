@@ -33,9 +33,10 @@ inline int reverseDirectionIndex(const int directionIndex) {
 
 const int N_RUN = 100000;
 const int N_VELOCITY_PRINT_INTERVAL = 10000;
+const int N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
 const int N_GRID_X_DIM = 20;
 const int N_GRID_Y_DIM = 100;
-const field_t F_TAU = 1.00;
+const field_t F_TAU = 0.77;
 const field_t F_BODY_FORCE_X = 1.00e-8;
 const field_t F_BODY_FORCE_Y = 0;
 
@@ -46,8 +47,14 @@ const std::string S_SHORT_TESTS = "ShortTests/";
 const std::string S_TAU_TESTS = "TauTests/";
 const std::string S_LENGTH_TESTS_2 = "LengthTests2/";
 
+// Density related
+const std::string S_DENSITY_OUTPUT_DIRECTORY_BASE = "DensityTests/";
+const std::string S_DENSITY_OUTPUT_FILE_NAME_BASE = "DensityTest";
+const std::string S_DENSITY_OUTPUT_FULL_PATH = S_DENSITY_OUTPUT_DIRECTORY_BASE;
+
 const std::string S_FILE_NAME_BASE = "PoiseuilleFlow";
 const std::string S_OUTPUT_DIRECTORY_BASE = "SimulationOutput/";
 const std::string S_FLOW_TYPE = "Poiseuille/";
 const std::string S_FLOW_SUBCATEGORY = S_SHORT_TESTS;
 const std::string S_DIRECTORY_VELOCITY_OUTPUT = S_OUTPUT_DIRECTORY_BASE + S_FLOW_TYPE + S_FLOW_SUBCATEGORY;
+//const std::string S_DIRECTORY_VELOCITY_OUTPUT = "";

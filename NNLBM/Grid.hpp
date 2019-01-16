@@ -75,7 +75,8 @@ private:
 			}
 			break;
 
-		case CellType::periodicCell:
+		case CellType::periodicBulk:
+		case CellType::periodicSolid:
 			switch (direction) {
 			case CellDirection::east:		(x == xDim - 2) ? dx = -(xDim - 3) : dx = +1;
 				break;
@@ -132,10 +133,15 @@ public:
 		for (int y = 0; y < yDim; y++) {
 			for (int x = 0; x < xDim; x++) {
 				if (y <= 1 || y >= yDim - 2 || x <= 0 || x >= xDim - 1) {
-					geometry[(y * xDim) + x] = CellType::solidCell;
+					if (y == 1 || y == yDim - 2 || x == 0 || x == xDim - 1) {
+						geometry[(y * xDim) + x] = CellType::periodicSolid;
+					}
+					else {
+						geometry[(y * xDim) + x] = CellType::solidCell;
+					}
 				}
 				else if (x == 1 || x == xDim - 2) {
-					geometry[(y * xDim) + x] = CellType::periodicCell;
+					geometry[(y * xDim) + x] = CellType::periodicBulk;
 				}
 				else {
 					geometry[(y * xDim) + x] = CellType::bulkCell;
@@ -163,8 +169,16 @@ public:
 						}
 					}
 				}
-				else if (geometry[gridPosition(x, y)] == CellType::periodicCell) {
+				else if (geometry[gridPosition(x, y)] == CellType::periodicBulk) {
 					grid[gridPosition(x, y)] = std::make_shared<BulkCell>();
+					for (int i = 0; i < nFieldDuplicates; i++) {
+						for (int cellDirection = 0; cellDirection < nPopulations; cellDirection++) {
+							grid[gridPosition(x, y)]->setPopulation(i, cellDirection, 0);
+						}
+					}
+				}
+				else if (geometry[gridPosition(x, y)] == CellType::periodicSolid) {
+					grid[gridPosition(x, y)] = std::make_shared<SolidCell>();
 					for (int i = 0; i < nFieldDuplicates; i++) {
 						for (int cellDirection = 0; cellDirection < nPopulations; cellDirection++) {
 							grid[gridPosition(x, y)]->setPopulation(i, cellDirection, 0);
@@ -433,7 +447,7 @@ public:
 		for (int y = 0; y < yDim; y++) {
 			for (int x = 0; x < xDim; x++) {
 				if (grid[gridPosition(x, y)] != nullptr) {
-					std::cout << grid[gridPosition(x, y)]->getRho(runIndex);
+					std::cout << grid[gridPosition(x, y)]->getDensity(runIndex);
 					std::cout << " - ";
 				}
 			}
@@ -458,18 +472,7 @@ public:
 			std::cout << std::endl;
 		}
 	}
-
-
-	//void writePopulationsToFile(const bool runIndex, const std::string filename) const {
-	//	std::ofstream myfile(filename);
-	//			
-	//	if (myfile.is_open())
-	//	{
-	//		myfile << getGridPolulationsList(runIndex);
-	//		myfile.close();
-	//	}
-	//	else std::cout << "Unable to open file";
-	//}
+	   
 
 	std::string appendGridPolulationsList(const bool runIndex, std::string& populationLists) const {
 		//std::string populationLists;
@@ -489,24 +492,8 @@ public:
 		return populationLists;
 		
 	}
-
-	//void appendGridVelocityList(const bool runIndex, std::string& velocityLists) const {		
-	//	velocityLists += ((velocityLists == "") ? "{" + std::to_string(xDim) + "," + std::to_string(yDim) + "},\n\n" + "{" : ",\n\n{");
-	//	for (int y = 0; y < yDim; y++) {
-	//		velocityLists += "{";
-	//		for (int x = 0; x < xDim; x++) {
-	//			//if (grid[gridPosition(x, y)] != nullptr) {
-	//			velocityLists += grid[gridPosition(x, y)]->getVelocityList(runIndex) + ((x < xDim - 1) ? ",\n" : "");
-	//			//}
-	//		}
-
-	//		velocityLists += ((y < yDim - 1) ? "},\n\n" : "}");
-	//	}
-	//	velocityLists += "}";
-
-	//	//return velocityLists;
-
-	//}
+		
+	
 	void appendGridVelocityList(const bool runIndex, std::string& velocityLists) const {
 		std::ostringstream velocityStringStream;
 		velocityStringStream << std::setprecision(3);
@@ -537,31 +524,35 @@ public:
 
 	}
 
-	//std::string appendGridVelocityList(const bool runIndex, std::string& velocityLists) const {
-	//	velocityLists += ((velocityLists == "") ? "{" : ",\n\n{");
-	//	for (int y = 0; y < yDim; y++) {
-	//		velocityLists += "{";
-	//		for (int x = 0; x < xDim; x++) {
-	//			//if (grid[gridPosition(x, y)] != nullptr) {
-	//			//velocityLists += ("{aaa" + std::to_string(x) + "," + std::to_string(y) + "}" + grid[gridPosition(x, y)]->getVelocityList(runIndex)) + ((x < xDim - 1) ? ",\n" : "");
-	//			velocityLists += "{{";
-	//			velocityLists += std::to_string(x);
-	//			velocityLists += ",";
-	//			velocityLists += std::to_string(yDim-y-1);
-	//			velocityLists += "},";
-	//			//velocityLists += "{X,Y}}";
-	//			velocityLists += grid[gridPosition(x, y)]->getVelocityList(runIndex);
-	//			velocityLists += (x < xDim - 1) ? "},\n" : "}";
-	//			//}
-	//		}
+	void appendGridDensityList(const bool runIndex, std::string& densityLists) const {
+		std::ostringstream densityStringStream;
+		densityStringStream << std::setprecision(3);
+		densityStringStream << densityLists;
+		if (densityStringStream.str() == "") {
+			densityStringStream << "{" << xDim << "," << yDim << "," << F_TAU << "," << std::setprecision(12) << std::fixed << F_BODY_FORCE_X << "," << F_BODY_FORCE_Y
+				<< std::setprecision(3) << std::defaultfloat << "},\n\n" << "{";
+		}
+		else {
+			densityStringStream << ",\n\n{";
+		}
+		/*densityStringStream << densityLists << ((densityLists == "") ? "{" + std::to_string(xDim) + "," + std::to_string(yDim) + "},\n\n" + "{" : ",\n\n{");*/
+		for (int y = 0; y < yDim; y++) {
+			densityStringStream << "{";
+			for (int x = 0; x < xDim; x++) {
+				//if (grid[gridPosition(x, y)] != nullptr) {
+				densityStringStream << grid[gridPosition(x, y)]->getDensity(runIndex) << ((x < xDim - 1) ? ",\n" : "");
+				//}
+			}
 
-	//		velocityLists += ((y < yDim - 1) ? "},\n\n" : "}");
-	//	}
-	//	velocityLists += "}";
+			densityStringStream << ((y < yDim - 1) ? "},\n\n" : "}");
+		}
+		densityStringStream << "}";
 
-	//	return velocityLists;
+		densityLists = densityStringStream.str();
 
-	//}
+		//return densityLists;
+
+	}
 
 	std::shared_ptr<Cell> getCell(const int x, const int y) const{
 		return grid[gridPosition(x, y)];

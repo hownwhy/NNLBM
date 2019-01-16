@@ -43,22 +43,23 @@ void stringToFile(const std::string string, const std::string filename){
 	}
 }
 
-//void addGridPopulationsToString(const bool runIndex, const Grid& grid, std::string& populationsList) {
-//	populationsList += "\n,{" + grid.getGridPolulationsList(runIndex) + "}";
-//}
+void densityListToFile(const std::string string, const std::string filename) {
+	createFolder(S_DENSITY_OUTPUT_DIRECTORY_BASE);
+	std::ofstream myfile(S_DENSITY_OUTPUT_DIRECTORY_BASE + filename);
+	std::string outputString = string;
+	outputString.insert(0, "{");
+	outputString.append("}");
 
-//// For testing
-//void setSimulationType(SimType simType) {
-//
-//	switch (simType) {
-//	case poiseuille:
-//		tau = 1.6;
-//		force = { 0.04, 0 };
-//
-//	}
-//}
-
-
+	if (myfile.is_open())
+	{
+		myfile << outputString;
+		myfile.close();
+	}
+	else {
+		std::cout << "\nUnable to open file: " << S_DENSITY_OUTPUT_FILE_NAME_BASE << filename;
+		system("pause");
+	}
+}
 
 
 int main() {
@@ -71,7 +72,9 @@ int main() {
 	std::string populationOutputString = "";
 	//std::string populationFileName = "";
 	std::string velocityString = "";
-	std::string velocityFileName;
+	std::string velocityFileName = "";
+	std::string densityString = "";
+	std::string densityFileName = "";
 	
 
 	grid.makeGeometry();
@@ -83,7 +86,7 @@ int main() {
 	grid.makeGrid();
 #if 0
 	grid.printCellType();
-	//system("pause");
+	system("pause");
 #endif	
 
 	grid.linkNeighbours();
@@ -137,17 +140,8 @@ int main() {
 	// Poisuille test
 	const int nRun = N_RUN;
 	const int printInterval = N_VELOCITY_PRINT_INTERVAL;
-	/*velocityFileName = 
-		"velocityPoiseuille_X" + std::to_string(N_GRID_X_DIM) 
-		+ "_Y" + std::to_string(N_GRID_Y_DIM) 
-		+ "_T" + std::to_string(N_RUN) 
-		+ "_Step" + std::to_string(N_VELOCITY_PRINT_INTERVAL) 
-		+ "_Tau" + std::to_string(F_TAU) 
-		+ "_F" + std::to_string(F_BODY_FORCE_X/ (10^N_FORCE_ORDER_OF_MAGNITUDE)) + "e" + std::to_string(N_FORCE_ORDER_OF_MAGNITUDE)
-		+ ".txt";	*/
 
 	std::ostringstream velocityFileNameStream;
-	//velocityFileNameStream << std::fixed;
 	velocityFileNameStream << std::setprecision(3);
 	velocityFileNameStream << S_FILE_NAME_BASE << "_X" << N_GRID_X_DIM
 		<< "_Y" << N_GRID_Y_DIM
@@ -157,14 +151,27 @@ int main() {
 		<< "_F" << F_BODY_FORCE_X
 		<< ".txt";
 	velocityFileName = velocityFileNameStream.str();
+
+	std::ostringstream densityFileNameStream;
+	densityFileNameStream << std::setprecision(3);
+	densityFileNameStream << S_DENSITY_OUTPUT_FILE_NAME_BASE << "_X" << N_GRID_X_DIM
+		<< "_Y" << N_GRID_Y_DIM
+		<< "_T" << N_RUN
+		<< "_Step" << N_DENSITY_PRINT_INTERVAL
+		<< "_Tau" << F_TAU
+		<< "_F" << F_BODY_FORCE_X
+		<< ".txt";
+	densityFileName = densityFileNameStream.str();
+
+
 	//grid.getCell(3, 3)->initializeVelocity(runIndex, SpatialDirection::x, 0.4);
 	//grid.getCell(3, 3)->initializeVelocity(runIndex, SpatialDirection::y, -0.4);
 	//grid.getCell(3, 3)->initializeVelocity(!runIndex, SpatialDirection::x, 0.4);
 	//grid.getCell(3, 3)->initializeVelocity(!runIndex, SpatialDirection::y, -0.4);
 
-	//grid.getCell(5, 4)->initializeVelocity(runIndex, SpatialDirection::x, -0.9);
+	//grid.getCell(4, 1)->initializeVelocity(runIndex, SpatialDirection::x, 0.9);
 	//grid.getCell(5, 4)->initializeVelocity(!runIndex, SpatialDirection::x, -0.9);
-	//grid.getCell(4, 5)->initializeVelocity(runIndex, SpatialDirection::y, 0.9);
+	//grid.getCell(1, 4)->initializeVelocity(runIndex, SpatialDirection::y, -0.9);
 	//grid.getCell(4, 5)->initializeVelocity(!runIndex, SpatialDirection::y, 0.9);
 	
 
@@ -180,6 +187,7 @@ int main() {
 
 	populationOutputString = "";
 	velocityString = "";
+	densityString = "";
 	
 
 	/*grid.appendGridPolulationsList(runIndex, populationOutputString);
@@ -194,12 +202,15 @@ int main() {
 		grid.collide(runIndex);
 		if (run % printInterval == 0) {
 			std::cout << "\r Processing: " << run << " of " << nRun;
-			//grid.appendGridPolulationsList(runIndex, populationOutputString);
-			//stringToFile(populationOutputString, "population.txt");
+			/*grid.appendGridPolulationsList(runIndex, populationOutputString);
+			stringToFile(populationOutputString, "population.txt");*/
 			/*std::cout << velocityString;
 			system("pause");*/
 			grid.appendGridVelocityList(runIndex, velocityString);			
 			stringToFile(velocityString, velocityFileName);
+
+			grid.appendGridDensityList(runIndex, densityString);
+			densityListToFile(densityString, densityFileName);
 
 		}
 		grid.propagate(runIndex);

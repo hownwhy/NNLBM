@@ -14,16 +14,17 @@ const enum CellType : int
 	cell = 0,
 	bulkCell = 1,
 	solidCell = 2,
-	periodicCell = 3
+	periodicBulk = 3,
+	periodicSolid = 4
 };
 
-enum SpatialDirection : int 
+const enum SpatialDirection : int 
 {
 	x = 0,
 	y = 1
 };
 
-const static enum SimType : int {
+const enum SimType : int {
 	streaming,
 	poiseuille
 };
@@ -121,9 +122,6 @@ public:
 	// TODO: Use other relaxation times
 	// TODO: put correct source term in call to "comouteVelocity"
 	void collide(const bool runIndex) {
-
-		//static int counter = 0;
-		//std::cout << "collide" << std::endl;
 		computeRho(runIndex);
 		computeVelocity(runIndex, force);
 		computePopulationsEq(runIndex);
@@ -133,61 +131,16 @@ public:
 				= populations[getArrayIndex(runIndex, cellDirection)] - dt * (populations[getArrayIndex(runIndex, cellDirection)] - populationsEq[getArrayIndex(runIndex, cellDirection)]) / tau;
 			// Add force term
 			populations[getArrayIndex(runIndex, cellDirection)] += ((1.0 - (dt / (2 * tau))) * forcePopulations[cellDirection]);
-			
-			/*if (counter % 10000 == 0) {
-				std::cout << "\nsourceTerm[" << cellDirection << "] = " << (1.0 - (1.0 / (2 * tau))) * forcePopulations[cellDirection];
-				system("pause");
-			}*/
 		}
-		//counter++;
+		
 		
 	}
 
-	virtual void collideAndPropagate(const bool runIndex) = 0;
-
-	//void computeSourceTerm(const int runIndex) {
-	//	static const field_t weightR = 4 / 9;
-	//	static const field_t weightHV = 1 / 9;
-	//	static const field_t weightD = 1 / 36;
-	//	static const field_t dtTauFactorR = 2 * (dt - 2 * tau) / (3 * tau);
-	//	static const field_t dtTauFactorHV = (dt - 2 * tau) / (6 * tau);
-	//	static const field_t dtTauFactorD = (dt - 2 * tau) / (24 * tau);
-	//	static const std::array<field_t, 2> force;
-	//	static const field_t Fx = force[SpatialDirection::x];
-	//	static const field_t Fy = force[SpatialDirection::y];
-	//	static const field_t ux = velocity[SpatialDirection::x];
-	//	static const field_t uy = velocity[SpatialDirection::y];
-	//	static const field_t FxUx = Fx * ux;
-	//	static const field_t FxUy = Fx * uy;
-	//	static const field_t FyUy = Fy * uy;
-	//	static const field_t FyUx = Fy * ux;
-
-
-	//	for (int populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
-
-	//		// Calculate the rest source field component
-	//		sourceTerms[CellDirection::rest] = dtTauFactorR * (FxUx + FyUy);
-
-	//		// Calculate horizontal and vertical source field components
-	//		sourceTerms[CellDirection::east] = dtTauFactorHV * (FyUy - 2 * FxUx - Fx);
-	//		sourceTerms[CellDirection::north] = dtTauFactorHV * (FxUx - 2 * FyUy - Fy);
-	//		sourceTerms[CellDirection::west] = dtTauFactorHV * (FyUy - 2 * FxUx + Fx);
-	//		sourceTerms[CellDirection::south] = dtTauFactorHV * (FxUx - 2 * FyUy + Fy);
-
-	//		// Calculate diagonal source field components
-	//		sourceTerms[CellDirection::northEast] = -dtTauFactorD * (Fx + Fy + 2 * FxUx + 3 * FyUx + 3 * FxUy + 2 * FyUy);
-	//		sourceTerms[CellDirection::northWest] = -dtTauFactorD * (-Fx + Fy + 2 * FxUx - 3 * FyUx - 3 * FxUy + 2 * FyUy);
-	//		sourceTerms[CellDirection::southWest] = -dtTauFactorD * (-Fx - Fy + 2 * FxUx + 3 * FyUx + 3 * FxUy + 2 * FyUy);
-	//		sourceTerms[CellDirection::southEast] = -dtTauFactorD * (Fx - Fy + 2 * FxUx - 3 * FyUx - 3 * FxUy + 2 * FyUy);
-
-	//	}
-	//}
+	virtual void collideAndPropagate(const bool runIndex) = 0;	
 
 	void computeSourceTerm(const int runIndex) {
 		static const field_t weightHV = 1. / 3;
 		static const field_t weightD = 1. / 12;
-		/*static const field_t dtTauFactorHV = ((2 * tau) - dt) / (6 * tau);
-		static const field_t dtTauFactorD = (2 * tau - dt) / (24 * tau);*/
 		static const field_t Fx = force[SpatialDirection::x];
 		static const field_t Fy = force[SpatialDirection::y];
 		static field_t ux = velocity[SpatialDirection::x];
@@ -209,13 +162,7 @@ public:
 		forcePopulations[CellDirection::northWest] = -weightD * (2 * Fx - 2 * Fy - 3 * FxUx + 3 * FyUx + 3 * FxUy - 3 * FyUy);
 		forcePopulations[CellDirection::southWest] = weightD * (-2 * Fx - 2 * Fy + 3 * FxUx + 3 * FyUx + 3 * FxUy + 3 * FyUy);
 		forcePopulations[CellDirection::southEast] = -weightD * (-2 * Fx + 2 * Fy - 3 * FxUx + 3 * FyUx + 3 * FxUy - 3 * FyUy);
-
-		//for (int cellDirection = 0; cellDirection < 9; cellDirection++){
-		//	//std::cout << "\nforcePopulations[" << CellDirection::east << "] = " << weightHV;
-		//	std::cout << "\nux: " << ux << ",  uy: " << uy << ",  Fx: " << Fx << ",  forcePopulations[" << cellDirection << "] = " << (1.0 - (1.0 / (2 * tau))) * forcePopulations[cellDirection] << std::endl;
-		//}
-		//system("pause");
-		
+			
 	}
 
 	void computeRho(const bool runIndex) {
@@ -257,9 +204,6 @@ public:
 		field_t uxuy = ux * uy;
 		field_t uSqr = uxSqr + uySqr;
 
-		//static int counter = 0;
-
-
 		// Weights
 		field_t weightR	= (2 * rho[runIndex]) / 9;	// Rest
 		field_t weightHV	= rho[runIndex] / 18;	// Horizontal/Vertical
@@ -279,21 +223,7 @@ public:
 		populationsEq[getArrayIndex(runIndex, CellDirection::northWest)] = weightD * (1 - (3 * (ux - uy)) - (9 * uxuy) + (3 * uSqr));
 		populationsEq[getArrayIndex(runIndex, CellDirection::southWest)] = weightD * (1 - (3 * (ux + uy)) + (9 * uxuy) + (3 * uSqr));
 		populationsEq[getArrayIndex(runIndex, CellDirection::southEast)] = weightD * (1 + (3 * (ux - uy)) - (9 * uxuy) + (3 * uSqr));
-		
-		/*std::cout << "\nweightR = " << weightR;
-		std::cout << "\nweightHV = " << weightHV;
-		std::cout << "\nweightD = " << weightD << std::endl;
-		system("pause");*/
-
-		//if (counter % 10000 == 0) {
-		//	for (int populationIndex = 0; populationIndex < 9; populationIndex++) {
-		//		//std::cout << "\nforcePopulations[" << CellDirection::east << "] = " << weightHV;
-		//		std::cout << "\nux: " << ux << ",  uy: " << uy << ",  rho: " << rho[runIndex] << ",  populationsEq[" << populationIndex << "] = " << populationsEq[getArrayIndex(runIndex, populationIndex)] << std::endl;
-		//	}
-		//	system("pause");
-		//}
-		//counter++;
-	
+			
 	}
 
 
@@ -348,25 +278,19 @@ public:
 		return populations[arrayIndex];
 	}
 
-	const field_t getRho(const bool runIndex) const {
+	const field_t getDensity(const bool runIndex) const {
 		return rho[runIndex];
 	}
+
 
 	const field_t getVelocity(const bool runIndex, const SpatialDirection direction) const{
 		return velocity[runIndex * nDimensions + direction];
 	}
-
-	/*const std::string getVelocityList(const bool runIndex) {
-		std::string temp;
-		temp += "{" + std::to_string(N_VELOCITY_MULTIPLICATION_FACTOR * velocity[runIndex * nDimensions + SpatialDirection::x]);
-		temp += ", " + std::to_string(N_VELOCITY_MULTIPLICATION_FACTOR * velocity[runIndex * nDimensions + SpatialDirection::y]) + "}";
-		return temp;
-	}*/
-
+	
 	const std::string getVelocityList(const bool runIndex) {
 		std::ostringstream velocityListStream;
-		velocityListStream << "{" << std::setprecision(3) << (N_VELOCITY_MULTIPLICATION_FACTOR * velocity[runIndex * nDimensions + SpatialDirection::x]);
-		velocityListStream << ", " << (N_VELOCITY_MULTIPLICATION_FACTOR * velocity[runIndex * nDimensions + SpatialDirection::y]) << std::setprecision(3) << "}";
+		velocityListStream << "{" << std::setprecision(3) << velocity[runIndex * nDimensions + SpatialDirection::x];
+		velocityListStream << ", " << velocity[runIndex * nDimensions + SpatialDirection::y] << std::setprecision(3) << "}";
 		return velocityListStream.str();
 	}
 
