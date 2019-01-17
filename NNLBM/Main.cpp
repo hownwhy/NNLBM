@@ -183,7 +183,7 @@ int main() {
 	//grid.getCell(3, 3)->initializeVelocity(!runIndex, SpatialDirection::x, 0.4);
 	//grid.getCell(3, 3)->initializeVelocity(!runIndex, SpatialDirection::y, -0.4);
 
-	//grid.getCell(2, 2)->initializeVelocity(runIndex, SpatialDirection::x, 0.9);
+	//grid.getCell(4, 2)->initializeVelocity(runIndex, SpatialDirection::x, 0.9);
 	//grid.getCell(5, 4)->initializeVelocity(!runIndex, SpatialDirection::x, -0.9);
 	//grid.getCell(3, 2)->initializeVelocity(runIndex, SpatialDirection::y, -0.9);
 	//grid.getCell(4, 5)->initializeVelocity(!runIndex, SpatialDirection::y, 0.9);
@@ -223,8 +223,8 @@ int main() {
 			grid.appendGridVelocityList(runIndex, velocityString);			
 			velocityListToFile(velocityString, velocityFileName);
 
-			//grid.appendGridDensityList(runIndex, densityString);
-			//densityListToFile(densityString, densityFileName);
+			grid.appendGridDensityList(runIndex, densityString);
+			densityListToFile(densityString, densityFileName);
 
 		}
 		grid.propagate(runIndex);

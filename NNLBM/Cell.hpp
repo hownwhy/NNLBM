@@ -180,20 +180,20 @@ public:
 
 	void computeVelocity(const bool runIndex, const std::array<field_t, 2> bodyForce) {
 		velocity[runIndex * nDimensions + SpatialDirection::x] =
-			((populations[getArrayIndex(runIndex, CellDirection::east)] +
-				populations[getArrayIndex(runIndex, CellDirection::northEast)] +
-				populations[getArrayIndex(runIndex, CellDirection::southEast)] -
-				populations[getArrayIndex(runIndex, CellDirection::west)] -
-				populations[getArrayIndex(runIndex, CellDirection::northWest)] -
-				populations[getArrayIndex(runIndex, CellDirection::southWest)]) / rho[runIndex]) + bodyForce[SpatialDirection::x] / (2 * rho[runIndex]);
+			((populations[getArrayIndex(runIndex, CellDirection::east)] 
+				+ populations[getArrayIndex(runIndex, CellDirection::northEast)]
+				+ populations[getArrayIndex(runIndex, CellDirection::southEast)]
+				- populations[getArrayIndex(runIndex, CellDirection::west)]
+				- populations[getArrayIndex(runIndex, CellDirection::northWest)]
+				- populations[getArrayIndex(runIndex, CellDirection::southWest)]) / rho[runIndex]) + bodyForce[SpatialDirection::x] / (2 * rho[runIndex]);
 
 		velocity[runIndex * nDimensions + SpatialDirection::y] =
-			((populations[getArrayIndex(runIndex, CellDirection::north)] +
-				populations[getArrayIndex(runIndex, CellDirection::northEast)] +
-				populations[getArrayIndex(runIndex, CellDirection::northWest)] -
-				populations[getArrayIndex(runIndex, CellDirection::south)] -
-				populations[getArrayIndex(runIndex, CellDirection::southEast)] -
-				populations[getArrayIndex(runIndex, CellDirection::southWest)]) / rho[runIndex]) + bodyForce[SpatialDirection::y] / (2 * rho[runIndex]);
+			((populations[getArrayIndex(runIndex, CellDirection::north)]
+				+ populations[getArrayIndex(runIndex, CellDirection::northEast)] 
+				+ populations[getArrayIndex(runIndex, CellDirection::northWest)]
+				- populations[getArrayIndex(runIndex, CellDirection::south)]
+				- populations[getArrayIndex(runIndex, CellDirection::southEast)] 
+				- populations[getArrayIndex(runIndex, CellDirection::southWest)]) / rho[runIndex]) + bodyForce[SpatialDirection::y] / (2 * rho[runIndex]);
 	}	
 	
 	void computePopulationsEq(const bool runIndex) {
@@ -257,22 +257,10 @@ public:
 		return neighbours;
 	}
 
-	//const std::string getPopulationsList(const bool runIndex) {
-	//	std::string temp;
-	//	temp += "{" + std::to_string(populations[getArrayIndex(runIndex, 0)]);
-	//	for (int i = 1; i < nPopulations-1; i++) {
-	//		temp += ", " + std::to_string(populations[getArrayIndex(runIndex, i)]);
-	//		
-	//	}
-	//	
-	//	temp += ", " + std::to_string(populations[getArrayIndex(runIndex, nPopulations-1)]) + "}";
-	//	return temp;
-	//}
-
 	const std::string getPopulationsList(const bool runIndex) {
 		std::ostringstream populationsListStream;
 		populationsListStream << "{" << std::setprecision(9) << populations[getArrayIndex(runIndex, 0)];
-		for (int i = 1; i < nPopulations - 1; i++) {
+		for (int i = 1; i < nPopulations; i++) {
 			populationsListStream << ", " << populations[getArrayIndex(runIndex, i)];
 		}
 		populationsListStream  << "}";
