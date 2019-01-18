@@ -89,6 +89,7 @@ public:
 		//printPopulationsEq(0);
 		//printPopulations(0);
 		std::copy(populationsEq_.begin(), populationsEq_.end(), populations_.begin());
+		std::copy(populationsEq_.begin(), populationsEq_.end(), populations_.begin() + nPopulations);
 		//std::copy(populationsEq_.begin() + (runIndex * nPopulations), populationsEq_.end() - (!runIndex * nPopulations), populations_.begin() + (runIndex * nPopulations));
 		//printPopulations(0);
 		//system("pause");
@@ -100,6 +101,7 @@ public:
 		computePopulationsEq();
 		//std::copy(populationsEq_.at(runIndex * nPopulations), populationsEq_.at((runIndex * nPopulations) + nPopulations), populations_.at(runIndex * nPopulations));
 		std::copy(populationsEq_.begin(), populationsEq_.end(), populations_.begin());
+		std::copy(populationsEq_.begin(), populationsEq_.end(), populations_.begin() + nPopulations);
 		//std::copy(populationsEq_.begin() + (runIndex * nPopulations), populationsEq_.end() - (!runIndex * nPopulations), populations_.begin() + (runIndex * nPopulations));
 	}
 
@@ -108,6 +110,7 @@ public:
 		velocity_[direction] = velocity;
 		computePopulationsEq();		
 		std::copy(populationsEq_.begin(), populationsEq_.end(), populations_.begin());
+		std::copy(populationsEq_.begin(), populationsEq_.end(), populations_.begin() + nPopulations);
 		//std::copy(populationsEq_.begin() + (runIndex * nPopulations), populationsEq_.end() - (!runIndex * nPopulations), populations_.begin() + (runIndex * nPopulations));
 	}
 
