@@ -17,21 +17,35 @@ public:
 	//	//std::cout << "collide" << std::endl;
 	//	const int dt = 1;
 	//	const field_t tau = 10;
-	//	computeRho(runIndex);
+	//	computeDensity(runIndex);
 	//	computeVelocity(runIndex);
-	//	computePopulationsEq(runIndex);
+	//	computePopulationsEq();
 	//	for (int cellDirection = 0; cellDirection < nDirections; cellDirection++) {			
 	//		populations[getArrayIndex(runIndex, cellDirection)]
 	//			= populations[getArrayIndex(runIndex, cellDirection)] - dt * (populations[getArrayIndex(runIndex, cellDirection)] - populationsEq[getArrayIndex(runIndex, cellDirection)]) / tau;
 	//	}
 	//}
 
+	void collide(const bool runIndex) {
+		//std::cout << "\n\nDensity before computeDensity = " << density_;
+		computeDensity(runIndex);
+		//std::cout << "\n\nDensity after computeDensity = " << density_;
+		computeVelocity(runIndex, force);
+		computePopulationsEq();
+		computeForcePopulations();
+		int populationIndex = 0;
+		for (int cellDirection = 0; cellDirection < nDirections; cellDirection++) {		
+			populationIndex = getArrayIndex(runIndex, cellDirection);
+			populations_[populationIndex]
+				= populations_[populationIndex] - dt * (populations_[populationIndex] - populationsEq_[cellDirection]) / tau;
+			// Add force term
+			populations_[populationIndex] += ((1.0 - (dt / (2 * tau))) * forcePopulations_[cellDirection]);
+		}		
+	}
+
 	void setReceived(const bool runIndex, const int populationIndex, const field_t fieldValue) {
 		int arrayIndex = getArrayIndex(runIndex, populationIndex);
-		//std::cout << "setPopulation ARRAY_INDEX : " << arrayIndex << std::endl;;
-		assert(("setPopulations: arrayIndex is negative", arrayIndex >= 0));
-		assert(("setPopulations: arrayIndex to high", arrayIndex < nFieldDuplicates * nPopulations));
-		populations[arrayIndex] = fieldValue;
+		populations_[arrayIndex] = fieldValue;
 	}
 
 	// The only real difference of collideAndPropagate compared with collide is where the result is stored:
@@ -39,9 +53,9 @@ public:
 	void collideAndPropagate(const bool runIndex) override{
 		const int dt = 1;
 		const field_t tau = 1;
-		computeRho(runIndex);
-		computeVelocity(runIndex, { 0,0 });
-		computePopulationsEq(runIndex);
+		computeDensity(runIndex);
+		computeVelocity(runIndex, force);
+		computePopulationsEq();
 		field_t currentPopulation;
 		std::shared_ptr<Cell> targetCell;
 
@@ -50,8 +64,8 @@ public:
 			assert(("collideAndPropagate: arrayIndex is negaive:" , arrayIndex >= 0));
 			assert(("collideAndPropagate: arrayIndex to high", arrayIndex < nFieldDuplicates * nPopulations));
 			// Imediate relaxation f[i] = f_eq[i]
-			currentPopulation = populationsEq[arrayIndex];
-			targetCell = neighbours.getNeighbour(cellDirection);			
+			currentPopulation = populationsEq_[cellDirection];
+			targetCell = neighbours_.getNeighbour(cellDirection);			
 			targetCell->setPopulation(!runIndex, cellDirection, currentPopulation);
 
 			/*populations[getArrayIndex(!runIndex, cellDirection)]

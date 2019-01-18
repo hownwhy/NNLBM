@@ -136,7 +136,13 @@ int main() {
 	system("pause");
 #endif
 
-
+#if B_CONSOL_OUT_DENSITY
+	std::cout << "Initial density runIndex = " << runIndex << std::endl;
+	grid.printCellRho(runIndex);
+	std::cout << "Initial density !runIndex = " << !runIndex << std::endl;
+	grid.printCellRho(!runIndex);
+	system("pause");
+#endif
 
 
 
@@ -183,9 +189,9 @@ int main() {
 	//grid.getCell(3, 3)->initializeVelocity(!runIndex, SpatialDirection::x, 0.4);
 	//grid.getCell(3, 3)->initializeVelocity(!runIndex, SpatialDirection::y, -0.4);
 
-	//grid.getCell(4, 2)->initializeVelocity(runIndex, SpatialDirection::x, 0.9);
+	//grid.getCell(2, 2)->initializeVelocity(runIndex, SpatialDirection::x, 0.9);
 	//grid.getCell(5, 4)->initializeVelocity(!runIndex, SpatialDirection::x, -0.9);
-	//grid.getCell(3, 2)->initializeVelocity(runIndex, SpatialDirection::y, -0.9);
+	//grid.getCell(2, 3)->initializeVelocity(SpatialDirection::y, -0.9);
 	//grid.getCell(4, 5)->initializeVelocity(!runIndex, SpatialDirection::y, 0.9);
 	
 
@@ -214,6 +220,14 @@ int main() {
 	for (int run = 0; run < nRun; run++) {
 		
 		grid.collide(runIndex);
+#if B_CONSOL_OUT_DENSITY
+		std::cout << "\n\nDensity after collide" << std::endl;
+		grid.printCellRho(runIndex);
+		std::cout << std::endl;
+		grid.printCellRho(!runIndex);
+		std::cout << std::endl;
+		//system("pause");
+#endif
 		if (run % printInterval == 0) {
 			std::cout << "\r Processing: " << run << " of " << nRun;
 			grid.appendGridPolulationsList(runIndex, populationOutputString);
@@ -228,6 +242,15 @@ int main() {
 
 		}
 		grid.propagate(runIndex);
+
+#if B_CONSOL_OUT_DENSITY
+		std::cout << "\n\nDensity after propagate" << std::endl;
+		grid.printCellRho(runIndex);
+		std::cout << std::endl;
+		grid.printCellRho(!runIndex);
+		std::cout << std::endl;
+		system("pause");
+#endif
 	/*	grid.appendGridPolulationsList(!runIndex, populationOutputString);
 		grid.appendGridVelocityList(!runIndex, velocityString);
 		stringToFile(populationOutputString, "testfile.txt");

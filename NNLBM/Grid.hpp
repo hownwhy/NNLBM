@@ -218,22 +218,36 @@ public:
 	}	   	
 
 	// Set rho and velocity for all cells, exxept for the "ghost" cells.
+	//void gridInitialize(const bool runIndex) const {
+	//	const int xMargin = 1;
+	//	const int yMargin = 1;
+	//	const field_t rho = 1.0;
+	//	const field_t xVelocity = 0.0;
+	//	const field_t yVelocity = 0.0;
+	//	//const 
+	//	
+	//	for (int runIndex = 0; runIndex < 1; runIndex++) {
+	//		for (int y = yMargin; y < yDim - yMargin; y++) {
+	//			for (int x = xMargin; x < xDim - xMargin; x++) {
+	//				grid[gridPosition(x, y)]->initialize(runIndex, rho, xVelocity, yVelocity);
+	//			}
+	//		}
+	//	}
+	//}
+
 	void gridInitialize(const bool runIndex) const {
 		const int xMargin = 1;
 		const int yMargin = 1;
-		const field_t rho = 1.0;
-		const field_t xVelocity = 0.0;
-		const field_t yVelocity = 0.0;
-		//const 
-		for (int runIndex = 0; runIndex < 2; runIndex++) {
-			for (int y = yMargin; y < yDim - yMargin; y++) {
-				for (int x = xMargin; x < xDim - xMargin; x++) {
-					grid[gridPosition(x, y)]->initialize(runIndex, rho, xVelocity, yVelocity);
-				}
+		field_t rho = 1.0;
+		field_t xVelocity = 0.0;
+		field_t yVelocity = 0.0;	
+		
+		for (int y = yMargin; y < yDim - yMargin; y++) {
+			for (int x = xMargin; x < xDim - xMargin; x++) {
+				grid[gridPosition(x, y)]->initialize(rho, xVelocity, yVelocity);
 			}
-		}
+		}		
 	}
-
 	
 	//******************************************************************************************************************
 	//******************************************************************************************************************
@@ -274,7 +288,7 @@ public:
 		const int yMargin = 1;
 		for (int y = yMargin; y < yDim - yMargin; y++) {
 			for (int x = xMargin; x < xDim - xMargin; x++) {
-				grid[gridPosition(x, y)]->computeRho(runIndex);
+				grid[gridPosition(x, y)]->computeDensity(runIndex);
 			}
 		}
 	}
@@ -442,11 +456,11 @@ public:
 	//******************************************************************************************************************
 	// Cell rho - print routine
 	void printCellRho(const bool runIndex) const{
-		std::cout << std::endl;
+		/*std::cout << std::endl;*/
 		for (int y = 0; y < yDim; y++) {
 			for (int x = 0; x < xDim; x++) {
 				if (grid[gridPosition(x, y)] != nullptr) {
-					std::cout << grid[gridPosition(x, y)]->getDensity(runIndex);
+					std::cout << grid[gridPosition(x, y)]->getDensity();
 					std::cout << " - ";
 				}
 			}
@@ -462,9 +476,9 @@ public:
 		for (int y = 0; y < yDim; y++) {
 			for (int x = 0; x < xDim; x++) {
 				if (grid[gridPosition(x, y)] != nullptr) {
-					std::cout << "(" << grid[gridPosition(x, y)]->getVelocity(runIndex, SpatialDirection::x) 
+					std::cout << "(" << grid[gridPosition(x, y)]->getVelocity(SpatialDirection::x) 
 						<< "," 
-						<< grid[gridPosition(x, y)]->getVelocity(runIndex, SpatialDirection::y) << ")";
+						<< grid[gridPosition(x, y)]->getVelocity(SpatialDirection::y) << ")";
 					std::cout << " - ";
 				}
 			}
@@ -509,7 +523,7 @@ public:
 			velocityStringStream << "{";
 			for (int x = 0; x < xDim; x++) {
 				//if (grid[gridPosition(x, y)] != nullptr) {
-				velocityStringStream << grid[gridPosition(x, y)]->getVelocityList(runIndex) << ((x < xDim - 1) ? ",\n" : "");
+				velocityStringStream << grid[gridPosition(x, y)]->getVelocityList() << ((x < xDim - 1) ? ",\n" : "");
 				//}
 			}
 
@@ -539,7 +553,7 @@ public:
 			densityStringStream << "{";
 			for (int x = 0; x < xDim; x++) {
 				//if (grid[gridPosition(x, y)] != nullptr) {
-				densityStringStream << grid[gridPosition(x, y)]->getDensity(runIndex) << ((x < xDim - 1) ? ",\n" : "");
+				densityStringStream << grid[gridPosition(x, y)]->getDensity() << ((x < xDim - 1) ? ",\n" : "");
 				//}
 			}
 

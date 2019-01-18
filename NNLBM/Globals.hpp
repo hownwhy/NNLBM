@@ -31,13 +31,15 @@ inline int reverseDirectionIndex(const int directionIndex) {
 	return (directionIndex + threeHalfDirection) % nDirections;
 }
 
-const int N_RUN = 30;
-const int N_VELOCITY_PRINT_INTERVAL = 1;
+#define B_CONSOL_OUT_DENSITY  0;
+const int N_RUN = 10000;
+const int N_VELOCITY_PRINT_INTERVAL = 1000;
 const int N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
-const int N_GRID_X_DIM = 6;
-const int N_GRID_Y_DIM = 6;
-const field_t F_TAU = 100;
+const int N_GRID_X_DIM = 4;
+const int N_GRID_Y_DIM = 50;
+const field_t F_TAU = 100.00;
 const field_t F_BODY_FORCE_X = 1.00e-8;
+//const field_t F_BODY_FORCE_X = 0;
 const field_t F_BODY_FORCE_Y = 0;
 
 const field_t N_VELOCITY_MULTIPLICATION_FACTOR = 1;

@@ -35,22 +35,21 @@ public:
 	//	//std::cout << "collide" << std::endl;
 	//	const int dt = 1;
 	//	const field_t tau = 10;
-	//	computeRho(runIndex);
+	//	computeDensity(runIndex);
 	//	computeVelocity(runIndex);
-	//	computePopulationsEq(runIndex);
+	//	computePopulationsEq();
 	//	for (int cellDirection = 0; cellDirection < nDirections; cellDirection++) {
 	//		populations[getArrayIndex(runIndex, cellDirection)]
 	//			= populations[getArrayIndex(runIndex, cellDirection)] - dt * (populations[getArrayIndex(runIndex, cellDirection)] - populationsEq[getArrayIndex(runIndex, cellDirection)]) / tau;
 	//	}
 	//}
 
+	void collide(const bool runIndex) {}
+	
 	//Half way bounce back
 	void setReceived(const bool runIndex, const int populationIndex, const field_t fieldValue) {
 		int arrayIndex = getArrayIndex(runIndex, reverseDirectionIndex(populationIndex));
-		//std::cout << "setPopulation ARRAY_INDEX : " << arrayIndex << std::endl;;
-		assert(("setPopulations: arrayIndex is negative", arrayIndex >= 0));
-		assert(("setPopulations: arrayIndex to high", arrayIndex < nFieldDuplicates * nPopulations));
-		populations[arrayIndex] = fieldValue;
+		populations_[arrayIndex] = fieldValue;
 	}
 
 	// BounceBack and proppagate
@@ -61,7 +60,7 @@ public:
 
 		for (int cellDirection = 0; cellDirection < nDirections; cellDirection++) {
 			currentPopulation = getPolulation(runIndex, cellDirection);
-			targetCell = neighbours.getNeighbour(cellDirection);
+			targetCell = neighbours_.getNeighbour(cellDirection);
 			targetCell->setPopulation(!runIndex, reverseDirectionIndex(cellDirection), currentPopulation);
 		}
 	}
