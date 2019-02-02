@@ -334,4 +334,6 @@ ASALocalRun/
 **/SimulationOutput
 **/*.nb
 **/*.gif
-
+**/*.pdf
+**/*.png
+**/Not in use/

@@ -15,27 +15,33 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BulkCell.hpp">
+    <ClInclude Include="Code\Globals.hpp">
       <Filter>Resource Files</Filter>
     </ClInclude>
-    <ClInclude Include="Globals.hpp">
+    <ClInclude Include="Code\Grid.hpp">
       <Filter>Resource Files</Filter>
     </ClInclude>
-    <ClInclude Include="Grid.hpp">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Neighbours.hpp">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SolidCell.hpp">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Cell.hpp">
+    <ClInclude Include="Code\InputOutput.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Neighbours.hpp">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Cell\WallCell.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Cell\SolidCell.hpp">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Cell\Cell.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Cell\BulkCell.hpp">
+      <Filter>Resource Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Main.cpp">
+    <ClCompile Include="Code\Main.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
   </ItemGroup>

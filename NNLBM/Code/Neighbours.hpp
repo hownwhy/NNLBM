@@ -1,6 +1,6 @@
 #pragma once
 #include "Globals.hpp"
-#include "Cell.hpp"
+#include "Cell/Cell.hpp"
 #include <array>
 #include <memory>
 #include <iostream>
@@ -8,6 +8,10 @@
 class Cell;
 
 class Neighbours {
+
+public:
+	~Neighbours() = default;
+	Neighbours() = default;
 
 private:
 	static const int nNeighbours = nDirections;
