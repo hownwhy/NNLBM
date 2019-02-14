@@ -1,9 +1,11 @@
 #pragma once
 #include "Globals.hpp"
+//#include "Geometry.hpp"
 #include "Cell/Cell.hpp"
 #include "./Cell/BulkCell.hpp"
 #include "./Cell/WallCell.hpp"
 #include "./Cell/SolidCell.hpp"
+
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -11,13 +13,9 @@
 //#include <fstream>
 #include <memory>
 
-
+//template<size_t X_DIM_FLUID, size_t Y_DIM_FLUID, GeometryType GEOMETRY_TYPE>
 class Grid {
-
-public:
-	Grid() = default;
-	~Grid() = default;
-
+	
 private:
 	static const int xDimFluid = N_GRID_X_DIM_FLUID;
 	static const int yDimFluid = N_GRID_Y_DIM_FLUID;
@@ -26,8 +24,17 @@ private:
 	static const int xDimTotal = xDimFluid + 2 * N_X_SOLID_CELLS;
 	static const int yDimTotal = yDimFluid + 2 * N_Y_SOLID_CELLS;
 
+	//Geometry< xDimTotal, yDimTotal,GeometryType::pipe> geometry_;
 	std::array<int, xDimTotal * yDimTotal> geometry;
 	std::array<std::shared_ptr<Cell>, xDimTotal * yDimTotal> grid;
+
+public:
+	Grid() {
+
+	}
+	~Grid() = default;
+
+
 
 public:
 
@@ -117,8 +124,8 @@ public:
 	//******************************************************************************************************************
 	// Prepare and initialize
 	//******************************************************************************************************************
-	   
-	void makeGeometry() {
+	
+	void makePipeGeometry() {
 		int cellType = 0x00;
 		for (int y = 0; y < yDimTotal; y++) {
 			for (int x = 0; x < xDimTotal; x++) {
@@ -131,7 +138,26 @@ public:
 				else {
 					cellType = CellType::bulk;
 				}
-				geometry[(y * xDimTotal) + x] = cellType;
+				geometry.at((y * xDimTotal) + x) = cellType;
+			}
+		}		
+	}
+
+	void makeBoxGeometry() {
+		int cellType = 0x00;
+		for (int y = 0; y < yDimTotal; y++) {
+			for (int x = 0; x < xDimTotal; x++) {
+
+				if (y < (0 + N_Y_SOLID_CELLS) || y > yDimTotal - (1 + N_Y_SOLID_CELLS) || (x < 0 + N_X_SOLID_CELLS) || x > xDimTotal - (1 + N_X_SOLID_CELLS)) {
+					cellType = CellType::solid;
+				}
+				else if (y == (0 + N_Y_SOLID_CELLS) || y == yDimTotal - (1 + N_Y_SOLID_CELLS) || (x == 0 + N_X_SOLID_CELLS) || x == xDimTotal - (1 + N_X_SOLID_CELLS)) {
+					cellType = CellType::wall;
+				}
+				else {
+					cellType = CellType::bulk;
+				}
+				geometry.at((y * xDimTotal) + x) = cellType;
 			}
 		}
 	}
@@ -147,17 +173,17 @@ public:
 
 		for (int y = 0; y < yDimTotal; y++) {
 			for (int x = 0; x < xDimTotal; x++) {
-				switch (geometry[gridPosition(x, y)]) {
+				switch (geometry.at(gridPosition(x, y))) {
 				case CellType::solid:
-					grid[gridPosition(x, y)] = std::make_shared<SolidCell>();
+					grid.at(gridPosition(x, y)) = std::make_shared<SolidCell>();
 					break;
 
 				case CellType::bulk:
-					grid[gridPosition(x, y)] = std::make_shared<BulkCell>();
+					grid.at(gridPosition(x, y)) = std::make_shared<BulkCell>();
 					break;
 
 				case CellType::wall:
-					grid[gridPosition(x, y)] = std::make_shared<WallCell>();
+					grid.at(gridPosition(x, y)) = std::make_shared<WallCell>();
 					break;
 
 				default:
@@ -165,8 +191,8 @@ public:
 				}				
 				
 				for (int cellDirection = 0; cellDirection < nPopulations; cellDirection++) {
-					grid[gridPosition(x, y)]->setPopulation(0, cellDirection, 0);
-					grid[gridPosition(x, y)]->setPopulation(1, cellDirection, 0);
+					grid.at(gridPosition(x, y))->setPopulation(0, cellDirection, 0);
+					grid.at(gridPosition(x, y))->setPopulation(1, cellDirection, 0);
 				}
 			}
 		}
@@ -181,14 +207,14 @@ public:
 		const int yMargin = N_Y_SOLID_CELLS;
 		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
 			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
-				grid[gridPosition(x, y)]->getCellNeighbours().setNeighbour(CellDirection::east, grid[gridNeigbourPossition(x, y, CellDirection::east)]);
-				grid[gridPosition(x, y)]->getCellNeighbours().setNeighbour(CellDirection::northEast, grid[gridNeigbourPossition(x, y, CellDirection::northEast)]);
-				grid[gridPosition(x, y)]->getCellNeighbours().setNeighbour(CellDirection::north, grid[gridNeigbourPossition(x, y, CellDirection::north)]);
-				grid[gridPosition(x, y)]->getCellNeighbours().setNeighbour(CellDirection::northWest, grid[gridNeigbourPossition(x, y, CellDirection::northWest)]);
-				grid[gridPosition(x, y)]->getCellNeighbours().setNeighbour(CellDirection::west, grid[gridNeigbourPossition(x, y, CellDirection::west)]);
-				grid[gridPosition(x, y)]->getCellNeighbours().setNeighbour(CellDirection::southWest, grid[gridNeigbourPossition(x, y, CellDirection::southWest)]);
-				grid[gridPosition(x, y)]->getCellNeighbours().setNeighbour(CellDirection::south, grid[gridNeigbourPossition(x, y, CellDirection::south)]);
-				grid[gridPosition(x, y)]->getCellNeighbours().setNeighbour(CellDirection::southEast, grid[gridNeigbourPossition(x, y, CellDirection::southEast)]);
+				grid.at(gridPosition(x, y))->getCellNeighbours().setNeighbour(CellDirection::east, grid.at(gridNeigbourPossition(x, y, CellDirection::east)));
+				grid.at(gridPosition(x, y))->getCellNeighbours().setNeighbour(CellDirection::northEast, grid.at(gridNeigbourPossition(x, y, CellDirection::northEast)));
+				grid.at(gridPosition(x, y))->getCellNeighbours().setNeighbour(CellDirection::north, grid.at(gridNeigbourPossition(x, y, CellDirection::north)));
+				grid.at(gridPosition(x, y))->getCellNeighbours().setNeighbour(CellDirection::northWest, grid.at(gridNeigbourPossition(x, y, CellDirection::northWest)));
+				grid.at(gridPosition(x, y))->getCellNeighbours().setNeighbour(CellDirection::west, grid.at(gridNeigbourPossition(x, y, CellDirection::west)));
+				grid.at(gridPosition(x, y))->getCellNeighbours().setNeighbour(CellDirection::southWest, grid.at(gridNeigbourPossition(x, y, CellDirection::southWest)));
+				grid.at(gridPosition(x, y))->getCellNeighbours().setNeighbour(CellDirection::south, grid.at(gridNeigbourPossition(x, y, CellDirection::south)));
+				grid.at(gridPosition(x, y))->getCellNeighbours().setNeighbour(CellDirection::southEast, grid.at(gridNeigbourPossition(x, y, CellDirection::southEast)));
 			}
 		}
 	}
@@ -205,7 +231,7 @@ public:
 	//	for (int runIndex = 0; runIndex < 1; runIndex++) {
 	//		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
 	//			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
-	//				grid[gridPosition(x, y)]->initialize(runIndex, rho, xVelocity, yVelocity);
+	//				grid.at(gridPosition(x, y))->initialize(runIndex, rho, xVelocity, yVelocity);
 	//			}
 	//		}
 	//	}
@@ -223,10 +249,10 @@ public:
 		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
 			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
 				if (y == 0 + yMargin) {
-					grid[gridPosition(x, y)]->initialize(rho, topPlateVelocity, yVelocity);
+					grid.at(gridPosition(x, y))->initialize(rho, topPlateVelocity, yVelocity);
 				}
 				else {
-					grid[gridPosition(x, y)]->initialize(rho, xVelocity, yVelocity);
+					grid.at(gridPosition(x, y))->initialize(rho, xVelocity, yVelocity);
 				}
 			}
 		}
@@ -241,7 +267,7 @@ public:
 		const int yMargin = N_Y_SOLID_CELLS;
 		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
 			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
-				grid[gridPosition(x, y)]->propageteTo(runIndex);
+				grid.at(gridPosition(x, y))->propageteTo(runIndex);
 			}
 		}
 	}
@@ -251,7 +277,7 @@ public:
 		const int yMargin = N_Y_SOLID_CELLS;
 		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
 			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
-				grid[gridPosition(x, y)]->collide(runIndex);
+				grid.at(gridPosition(x, y))->collide(runIndex);
 			}
 		}
 	}
@@ -261,7 +287,7 @@ public:
 		const int yMargin = N_Y_SOLID_CELLS;
 		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
 			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
-				grid[gridPosition(x, y)]->collideAndPropagate(runIndex);
+				grid.at(gridPosition(x, y))->collideAndPropagate(runIndex);
 			}
 		}
 	}
@@ -272,7 +298,7 @@ public:
 	//	for (int y = yMargin; y < yDimTotal - yMargin; y++) {
 	//		for (int x = xMargin; x < xDimTotal - xMargin; x++) {
 	//			if (y == 0 + yMargin) {
-	//				grid[gridPosition(x, y)]->addMovingBoundaryTerm(runIndex);
+	//				grid.at(gridPosition(x, y))->addMovingBoundaryTerm(runIndex);
 	//				/*std::cout << "addMoving....";
 	//				system("pause");*/
 	//			}				
@@ -285,7 +311,7 @@ public:
 		const int yMargin = N_Y_SOLID_CELLS;
 		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
 			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
-				grid[gridPosition(x, y)]->computeDensity(runIndex);
+				grid.at(gridPosition(x, y))->computeDensity(runIndex);
 			}
 		}
 	}
@@ -300,7 +326,7 @@ public:
 		std::cout << std::endl;
 		for (int y = 0; y < yDimTotal; y++) {
 			for (int x = 0; x < xDimTotal; x++) {
-				std::cout << geometry[(y * xDimTotal) + x];
+				std::cout << geometry.at((y * xDimTotal) + x);
 			}
 			std::cout << std::endl;
 		}
@@ -312,8 +338,8 @@ public:
 		std::cout << std::endl;
 		for (int y = 0; y < yDimTotal; y++) {
 			for (int x = 0; x < xDimTotal; x++) {
-				if (grid[gridPosition(x, y)] != nullptr) {
-					std::cout << grid[(y * xDimTotal) + x]->getCellTypeChar();
+				if (grid.at(gridPosition(x, y)) != nullptr) {
+					std::cout << grid.at((y * xDimTotal) + x)->getCellTypeChar();
 				}
 				else {
 					std::cout << "N";
@@ -331,49 +357,49 @@ public:
 		char E, NE, N, NW, W, SW, S, SE, R;
 
 
-		if ((tempCell = grid[gridPosition(x, y)]->getCellNeighbours().getNeighbour(CellDirection::east)) != nullptr) {
+		if ((tempCell = grid.at(gridPosition(x, y))->getCellNeighbours().getNeighbour(CellDirection::east)) != nullptr) {
 			E = tempCell->getCellTypeChar();
 		}
 		else {
 			E = 'N';
 		}
-		if ((tempCell = grid[gridPosition(x, y)]->getCellNeighbours().getNeighbour(CellDirection::northEast)) != nullptr) {
+		if ((tempCell = grid.at(gridPosition(x, y))->getCellNeighbours().getNeighbour(CellDirection::northEast)) != nullptr) {
 			NE = tempCell->getCellTypeChar();
 		}
 		else {
 			NE = 'N';
 		}
-		if ((tempCell = grid[gridPosition(x, y)]->getCellNeighbours().getNeighbour(CellDirection::north)) != nullptr) {
+		if ((tempCell = grid.at(gridPosition(x, y))->getCellNeighbours().getNeighbour(CellDirection::north)) != nullptr) {
 			N = tempCell->getCellTypeChar();
 		}
 		else {
 			N = 'N';
 		}
-		if ((tempCell = grid[gridPosition(x, y)]->getCellNeighbours().getNeighbour(CellDirection::northWest)) != nullptr) {
+		if ((tempCell = grid.at(gridPosition(x, y))->getCellNeighbours().getNeighbour(CellDirection::northWest)) != nullptr) {
 			NW = tempCell->getCellTypeChar();
 		}
 		else {
 			NW = 'N';
 		}
-		if ((tempCell = grid[gridPosition(x, y)]->getCellNeighbours().getNeighbour(CellDirection::west)) != nullptr) {
+		if ((tempCell = grid.at(gridPosition(x, y))->getCellNeighbours().getNeighbour(CellDirection::west)) != nullptr) {
 			W = tempCell->getCellTypeChar();
 		}
 		else {
 			W = 'N';
 		}
-		if ((tempCell = grid[gridPosition(x, y)]->getCellNeighbours().getNeighbour(CellDirection::southWest)) != nullptr) {
+		if ((tempCell = grid.at(gridPosition(x, y))->getCellNeighbours().getNeighbour(CellDirection::southWest)) != nullptr) {
 			SW = tempCell->getCellTypeChar();
 		}
 		else {
 			SW = 'N';
 		}
-		if ((tempCell = grid[gridPosition(x, y)]->getCellNeighbours().getNeighbour(CellDirection::south)) != nullptr) {
+		if ((tempCell = grid.at(gridPosition(x, y))->getCellNeighbours().getNeighbour(CellDirection::south)) != nullptr) {
 			S = tempCell->getCellTypeChar();
 		}
 		else {
 			S = 'N';
 		}
-		if ((tempCell = grid[gridPosition(x, y)]->getCellNeighbours().getNeighbour(CellDirection::southEast)) != nullptr) {
+		if ((tempCell = grid.at(gridPosition(x, y))->getCellNeighbours().getNeighbour(CellDirection::southEast)) != nullptr) {
 			SE = tempCell->getCellTypeChar();
 		}
 		else {
@@ -381,7 +407,7 @@ public:
 		}
 
 		// Rest shows cell at (x, y)
-		if ((tempCell = grid[gridPosition(x, y)]) != nullptr) {
+		if ((tempCell = grid.at(gridPosition(x, y))) != nullptr) {
 			R = tempCell->getCellTypeChar();
 		}
 		else {
@@ -422,21 +448,21 @@ public:
 
 	void printCellPopulation(const bool runIndex, const int x, const int y) const {
 		std::cout << std::endl;
-		std::cout << grid[gridPosition(x, y)]->getPolulation(runIndex, CellDirection::northWest)
-			<< " " << grid[gridPosition(x, y)]->getPolulation(runIndex, CellDirection::north)
-			<< " " << grid[gridPosition(x, y)]->getPolulation(runIndex, CellDirection::northEast) << std::endl;
+		std::cout << grid.at(gridPosition(x, y))->getPolulation(runIndex, CellDirection::northWest)
+			<< " " << grid.at(gridPosition(x, y))->getPolulation(runIndex, CellDirection::north)
+			<< " " << grid.at(gridPosition(x, y))->getPolulation(runIndex, CellDirection::northEast) << std::endl;
 
 		std::cout << " \\|/ " << std::endl;
 
-		std::cout << grid[gridPosition(x, y)]->getPolulation(runIndex, CellDirection::west)
-			<< "-" << grid[gridPosition(x, y)]->getPolulation(runIndex, CellDirection::rest)
-			<< "-" << grid[gridPosition(x, y)]->getPolulation(runIndex, CellDirection::east) << std::endl;
+		std::cout << grid.at(gridPosition(x, y))->getPolulation(runIndex, CellDirection::west)
+			<< "-" << grid.at(gridPosition(x, y))->getPolulation(runIndex, CellDirection::rest)
+			<< "-" << grid.at(gridPosition(x, y))->getPolulation(runIndex, CellDirection::east) << std::endl;
 
 		std::cout << " /|\\ " << std::endl;
 
-		std::cout << grid[gridPosition(x, y)]->getPolulation(runIndex, CellDirection::southWest)
-			<< " " << grid[gridPosition(x, y)]->getPolulation(runIndex, CellDirection::south)
-			<< " " << grid[gridPosition(x, y)]->getPolulation(runIndex, CellDirection::southEast) << std::endl;
+		std::cout << grid.at(gridPosition(x, y))->getPolulation(runIndex, CellDirection::southWest)
+			<< " " << grid.at(gridPosition(x, y))->getPolulation(runIndex, CellDirection::south)
+			<< " " << grid.at(gridPosition(x, y))->getPolulation(runIndex, CellDirection::southEast) << std::endl;
 	}
 
 	void  printCellPopulation(const bool runIndex) const {
@@ -456,8 +482,8 @@ public:
 		/*std::cout << std::endl;*/
 		for (int y = 0; y < yDimTotal; y++) {
 			for (int x = 0; x < xDimTotal; x++) {
-				if (grid[gridPosition(x, y)] != nullptr) {
-					std::cout << grid[gridPosition(x, y)]->getDensity();
+				if (grid.at(gridPosition(x, y)) != nullptr) {
+					std::cout << grid.at(gridPosition(x, y))->getDensity();
 					std::cout << " - ";
 				}
 			}
@@ -472,10 +498,10 @@ public:
 		std::cout << std::endl;
 		for (int y = 0; y < yDimTotal; y++) {
 			for (int x = 0; x < xDimTotal; x++) {
-				if (grid[gridPosition(x, y)] != nullptr) {
-					std::cout << "(" << grid[gridPosition(x, y)]->getVelocity(SpatialDirection::x)
+				if (grid.at(gridPosition(x, y)) != nullptr) {
+					std::cout << "(" << grid.at(gridPosition(x, y))->getVelocity(SpatialDirection::x)
 						<< ","
-						<< grid[gridPosition(x, y)]->getVelocity(SpatialDirection::y) << ")";
+						<< grid.at(gridPosition(x, y))->getVelocity(SpatialDirection::y) << ")";
 					std::cout << " - ";
 				}
 			}
@@ -490,7 +516,7 @@ public:
 		for (int y = 0; y < yDimTotal; y++) {
 			populationLists += "{";
 			for (int x = 0; x < xDimTotal; x++) {
-				populationLists += grid[gridPosition(x, y)]->getPopulationsList(runIndex) + ((x < xDimTotal - 1) ? ",\n" : "");				
+				populationLists += grid.at(gridPosition(x, y))->getPopulationsList(runIndex) + ((x < xDimTotal - 1) ? ",\n" : "");				
 			}
 			populationLists += ((y < yDimTotal - 1) ? "},\n\n" : "}");
 		}
@@ -505,7 +531,7 @@ public:
 		for (int y = 0; y < yDimTotal; y++) {
 			populationLists += "{";
 			for (int x = 0; x < xDimTotal; x++) {
-				populationLists += grid[gridPosition(x, y)]->getNonEqPopulationsList(runIndex) + ((x < xDimTotal - 1) ? ",\n" : "");			
+				populationLists += grid.at(gridPosition(x, y))->getNonEqPopulationsList(runIndex) + ((x < xDimTotal - 1) ? ",\n" : "");			
 			}
 			populationLists += ((y < yDimTotal - 1) ? "},\n\n" : "}");
 		}
@@ -532,8 +558,8 @@ public:
 		for (int y = 0 + yMargin; y < yDimTotal - yMargin; y++) {
 			velocityStringStream << "{";
 			for (int x = 0 + xMargin; x < xDimTotal - xMargin; x++) {
-				//if (grid[gridPosition(x, y)] != nullptr) {
-				velocityStringStream << grid[gridPosition(x, y)]->getVelocityList() << ((x < xDimTotal - xMargin - 1) ? ",\n" : "");
+				//if (grid.at(gridPosition(x, y)) != nullptr) {
+				velocityStringStream << grid.at(gridPosition(x, y))->getVelocityList() << ((x < xDimTotal - xMargin - 1) ? ",\n" : "");
 				//}
 			}
 
@@ -562,8 +588,8 @@ public:
 		for (int y = 0; y < yDimTotal; y++) {
 			densityStringStream << "{";
 			for (int x = 0; x < xDimTotal; x++) {
-				//if (grid[gridPosition(x, y)] != nullptr) {
-				densityStringStream << grid[gridPosition(x, y)]->getDensity() << ((x < xDimTotal - 1) ? ",\n" : "");
+				//if (grid.at(gridPosition(x, y)) != nullptr) {
+				densityStringStream << grid.at(gridPosition(x, y))->getDensity() << ((x < xDimTotal - 1) ? ",\n" : "");
 				//}
 			}
 
@@ -578,6 +604,6 @@ public:
 	}
 
 	std::shared_ptr<Cell> getCell(const int x, const int y) const {
-		return grid[gridPosition(x, y)];
+		return grid.at(gridPosition(x, y));
 	}
 };

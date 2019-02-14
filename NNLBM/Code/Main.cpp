@@ -21,7 +21,7 @@ void setSpeedAtPoint(Grid grid, int x, int y) {
 
 int main() {
 
-	bool runIndex = 0;
+	bool runIndex = 0;	
 	Grid grid;
 
 	std::string populationOutputString = "";
@@ -30,8 +30,8 @@ int main() {
 	std::string densityString = "";
 	std::string densityFileName = "";
 	
-
-	grid.makeGeometry();
+	grid.makePipeGeometry();
+	/*grid.makeBoxGeometry();*/
 #if 0
 	grid.printGeometry();
 	system("pause");
@@ -106,7 +106,7 @@ int main() {
 		//grid.getCell(2, 5)->setPopulation(0, CellDirection::west, 3);
 
 	//grid.getCell(0, 1)->setPopulation(0, CellDirection::west, 0.9);
-	//grid.getCell(5, 6)->setPopulation(0, CellDirection::east, 2);
+	grid.getCell(2, 2)->setPopulation(0, CellDirection::north, 1.0);
 	//grid.getCell(5, 6)->setPopulation(0, CellDirection::west, 0.9);
 #endif
 	
@@ -163,13 +163,13 @@ int main() {
 //#if 0
 //	std::array<int, 2> arrayy = { 1,2 };
 //	try {
-//		arrayy[2] = 0;		
+//		arrayy.at(2) = 0;		
 //	}
 //	catch(std::exception& e){
 //		std::cout << "Catch" << e.what();
 //		system("pause");
 //	}
-//	std::cout << arrayy[2];
+//	std::cout << arrayy.at(2);
 //	system("pause");
 //#endif
 	

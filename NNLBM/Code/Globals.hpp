@@ -13,27 +13,41 @@ static const int nDirections = 8;
 
 #define STREAM_TEST     0
 #define COUETTE_TEST    1
-#define POISEUILLE_TEST 2
+#define CAVITY_TEST		2
+#define POISEUILLE_TEST 3
 
-#define TEST_TYPE 2
+#define TEST_TYPE 3
 
 #if TEST_TYPE == STREAM_TEST
 const int N_RUN = 20;
 const int N_VELOCITY_PRINT_INTERVAL = 1;
 const int N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
 const int N_GRID_X_DIM_FLUID = 3;
-const int N_GRID_Y_DIM_FLUID = 9;
-const field_t F_TAU = 1.00;
-const field_t F_BODY_FORCE_X = 1.00e-6;
+const int N_GRID_Y_DIM_FLUID = 3;
+const field_t F_TAU = 100.00;
+const field_t F_BODY_FORCE_X = 0;
 const field_t F_BODY_FORCE_Y = 0;
 const field_t F_TOP_PLATE_VELOCITY = 0;
 #endif
 
 #if TEST_TYPE == COUETTE_TEST
-const int N_RUN = 1000;
-const int N_VELOCITY_PRINT_INTERVAL = 100;
+const int N_RUN = 10000;
+const int N_VELOCITY_PRINT_INTERVAL = 1000;
 const int N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
-const int N_GRID_X_DIM_FLUID = 20;
+const int N_GRID_X_DIM_FLUID = 10;
+const int N_GRID_Y_DIM_FLUID = 10;
+const field_t F_TAU = 0.70;
+//const field_t F_BODY_FORCE_X = 1.00e-8;
+const field_t F_BODY_FORCE_X = 0;
+const field_t F_BODY_FORCE_Y = 0;
+const field_t F_TOP_PLATE_VELOCITY = 0.001;
+#endif
+
+#if TEST_TYPE == CAVITY_TEST
+const int N_RUN = 10000;
+const int N_VELOCITY_PRINT_INTERVAL = 1000;
+const int N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
+const int N_GRID_X_DIM_FLUID = 10;
 const int N_GRID_Y_DIM_FLUID = 10;
 const field_t F_TAU = 0.70;
 //const field_t F_BODY_FORCE_X = 1.00e-8;
@@ -43,11 +57,11 @@ const field_t F_TOP_PLATE_VELOCITY = 0.001;
 #endif
 
 #if TEST_TYPE == POISEUILLE_TEST
-const int N_RUN = 60000;
-const int N_VELOCITY_PRINT_INTERVAL = 2000;// N_RUN / 10;
+const int N_RUN = 200000;
+const int N_VELOCITY_PRINT_INTERVAL = 20000;// N_RUN / 10;
 const int N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
-const int N_GRID_X_DIM_FLUID = 10;
-const int N_GRID_Y_DIM_FLUID = 50;
+const int N_GRID_X_DIM_FLUID = 2;
+const int N_GRID_Y_DIM_FLUID = 200;
 const field_t F_TAU = 0.90;
 const field_t F_BODY_FORCE_X = 1.00e-8;
 const field_t F_BODY_FORCE_Y = 0;
@@ -77,3 +91,4 @@ const std::string S_FLOW_TYPE = "VelocityTests/";
 const std::string S_FLOW_SUBCATEGORY = "";
 const std::string S_DIRECTORY_VELOCITY_OUTPUT = S_OUTPUT_DIRECTORY_BASE + S_FLOW_TYPE + S_FLOW_SUBCATEGORY;
 //const std::string S_DIRECTORY_VELOCITY_OUTPUT = "";
+

@@ -23,7 +23,7 @@ public:
 	// so that it will not overwrite populations that will be used in the current run (loop).	
 	// TODO: The local variables used for readability may (or may not) decrease performance. Find out. 
 	void propageteTo(const bool runIndex) override {
-		field_t propagationPopulation;
+		//field_t propagationPopulation;
 		std::shared_ptr<Cell> targetCell;
 
 		for (int cellDirection = 0; cellDirection < nDirections; cellDirection++) {
@@ -32,7 +32,7 @@ public:
 			switch (targetCell->getCellType()) {
 			case CellType::bulk:
 			case CellType::wall:				
-				targetCell->setReceived(!runIndex, cellDirection, populations_[populationIndex]);
+				targetCell->setReceived(!runIndex, cellDirection, populations_.at(populationIndex));
 				break;
 			case CellType::solid:
 				// Add velocity from moving walls
@@ -42,12 +42,12 @@ public:
 				const std::array<int, nDirections * nDimensions> cMask = { 0,1,0,1,0,0,0,0, 0,0,0,0,0,0,0,0 };
 				const std::array<field_t, nDirections> w = { (1. / 9), (1. / 36), (1. / 9), (1. / 36), (1. / 9), (1. / 36), (1. / 9), (1. / 36) };				
 				int index = (SpatialDirection::x * nDirections) + cellDirection;
-				populations_[populationIndex] -= (2 * w[cellDirection] * density_ / csSqr)
-					* ((c[index] * cMask[index] * wallVelocityX)
-						+ (c[index] * cMask[index] * wallVelocityY));
+				populations_.at(populationIndex) -= (2 * w.at(cellDirection) * density_ / csSqr)
+					* ((c.at(index) * cMask.at(index) * wallVelocityX)
+						+ (c.at(index) * cMask.at(index) * wallVelocityY));
 				
 				// Bounce back
-				setReceived(!runIndex, reverseDirectionIndex(cellDirection), populations_[populationIndex]);
+				setReceived(!runIndex, reverseDirectionIndex(cellDirection), populations_.at(populationIndex));
 				break;
 			}
 		}
@@ -67,9 +67,9 @@ public:
 		for (int cellDirection = 0; cellDirection < nDirections; cellDirection++) {
 			populationIndex = getArrayIndex(runIndex, cellDirection);
 			targetCell = neighbours_.getNeighbour(cellDirection);
-			propagationPopulation = populations_[populationIndex] - dt * (populations_[populationIndex] - populationsEq_[cellDirection]) / tau;
+			propagationPopulation = populations_.at(populationIndex) - dt * (populations_.at(populationIndex) - populationsEq_.at(cellDirection)) / tau;
 			// Add force term
-			propagationPopulation += ((1.0 - (dt / (2 * tau))) * forcePopulations_[cellDirection]);
+			propagationPopulation += ((1.0 - (dt / (2 * tau))) * forcePopulations_.at(cellDirection));
 
 			switch (targetCell->getCellType()) {
 			case CellType::bulk:
@@ -86,7 +86,7 @@ public:
 	////Half way bounce back
 	//void setReceived(const bool runIndex, const int populationIndex, const field_t fieldValue) {
 	//	int arrayIndex = getArrayIndex(runIndex, reverseDirectionIndex(populationIndex));
-	//	populations_[arrayIndex] = fieldValue;
+	//	populations_.at(arrayIndex) = fieldValue;
 	//}
 
 	// BounceBack and proppagate

@@ -22,7 +22,7 @@ public:
 		std::shared_ptr<Cell> targetCell;
 
 		for (int direction = 0; direction < nDirections; direction++) {
-			propagationPopulation = populations_[getArrayIndex(runIndex, direction)];
+			propagationPopulation = populations_.at(getArrayIndex(runIndex, direction));
 			targetCell = neighbours_.getNeighbour(direction);
 			targetCell->setReceived(!runIndex, direction, propagationPopulation);
 		}
@@ -43,9 +43,9 @@ public:
 			populationIndex = getArrayIndex(runIndex, cellDirection);
 			populationIndex2 = getArrayIndex(!runIndex, cellDirection);
 			targetCell = neighbours_.getNeighbour(cellDirection);
-			propagationPopulation = populations_[populationIndex] - dt * (populations_[populationIndex] - populationsEq_[cellDirection]) / tau;
+			propagationPopulation = populations_.at(populationIndex) - dt * (populations_.at(populationIndex) - populationsEq_.at(cellDirection)) / tau;
 			// Add force term
-			propagationPopulation += ((1.0 - (dt / (2 * tau))) * forcePopulations_[cellDirection]);
+			propagationPopulation += ((1.0 - (dt / (2 * tau))) * forcePopulations_.at(cellDirection));
 
 			targetCell->setReceived(!runIndex, cellDirection, propagationPopulation);
 		}

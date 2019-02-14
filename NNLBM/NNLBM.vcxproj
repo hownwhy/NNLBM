@@ -27,6 +27,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Code\Not in use\GeometryBak2.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Code\Not in use\Geometry.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Code\InputOutput.hpp" />
     <ClInclude Include="Code\Cell\WallCell.hpp" />
     <ClInclude Include="Code\Cell\BulkCell.hpp" />

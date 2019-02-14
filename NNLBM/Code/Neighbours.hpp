@@ -22,18 +22,18 @@ public:
 		//std::cout << "setNeighbour ARRAY_INDEX : " << direction << std::endl;
 		assert(("setNeighbour: arrayIndex is negative", direction >= 0));
 		assert(("setNeighbour: arrayIndex to high", direction < nNeighbours));
-		neighbours[direction] = cell;
+		neighbours.at(direction) = cell;
 	}	
 
 	std::shared_ptr<Cell> getNeighbour(const int direction) const {
 		//std::cout << "getNeighbour ARRAY_INDEX : " << direction << std::endl;
 		assert(("getNeighbour: arrayIndex is negative", direction >= 0));
 		assert(("getNeighbour: arrayIndex to high", direction < nNeighbours));
-		return neighbours[direction];
+		return neighbours.at(direction);
 	}
 
 	/*template<typename CellType>
 	void initializeNeighbour(const int direction) {
-		neighbours[direction] = std::make_shared<CellType>();
+		neighbours.at(direction) = std::make_shared<CellType>();
 	}*/
 };
