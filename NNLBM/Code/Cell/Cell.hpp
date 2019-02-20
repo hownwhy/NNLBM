@@ -53,10 +53,7 @@ static const field_t dt = 1;
 static const field_t tau = F_TAU;
 static const std::array<field_t, 2> bodyForce = { F_BODY_FORCE_X, F_BODY_FORCE_Y };
 
-//Couette flow
-//TODO: Make this a property of wall cells with an array of east, west, north and south wall velocities.
-static field_t wallVelocityX = F_TOP_PLATE_VELOCITY;
-static field_t wallVelocityY = 0;
+
 
 // TODO: See what can be done with templates instead of virtual functions
 class Cell {
@@ -134,14 +131,39 @@ public:
 		}
 	}
 
+
+
+
+#if BOOK_BOUNCE_BACK
 	virtual void propageteTo(const bool runIndex) = 0;
-
-	virtual void collideAndPropagate(const bool runIndex) = 0;
-
+	
 	void setReceived(const bool runIndex, const int populationIndex, const field_t fieldValue) {
 		int arrayIndex = getArrayIndex(runIndex, populationIndex);
 		populations_.at(arrayIndex) = fieldValue;
 	}
+#else
+
+	// TODO: The local variables used for readability may (or may not) decrease performance. Find out. 
+	void propageteTo(const bool runIndex) const {
+		field_t currentPopulation;
+		std::shared_ptr<Cell> targetCell;
+
+		for (int direction = 0; direction < nDirections; direction++) {
+			currentPopulation = populations_.at(getArrayIndex(runIndex, direction));
+			targetCell = neighbours_.getNeighbour(direction);
+			targetCell->setReceived(!runIndex, direction, currentPopulation);
+		}
+	}
+	
+	virtual void setReceived(const bool runIndex, const int populationIndex, const field_t fieldValue) = 0;
+#endif
+
+
+
+	virtual void collideAndPropagate(const bool runIndex) = 0;
+
+	
+	
 
 	void computeDensity(const bool runIndex) {
 		density_ =

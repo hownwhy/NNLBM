@@ -30,8 +30,14 @@ int main() {
 	std::string densityString = "";
 	std::string densityFileName = "";
 	
-	grid.makePipeGeometry();
-	/*grid.makeBoxGeometry();*/
+	
+	if (TEST_TYPE & (STREAM_TEST_PIPE | COUETTE_TEST | POISEUILLE_TEST)) {
+		grid.makePipeGeometry();
+	}
+	else if (TEST_TYPE & (STREAM_TEST_BOX | CAVITY_TEST)) {
+		grid.makeBoxGeometry();
+	}
+
 #if 0
 	grid.printGeometry();
 	system("pause");
@@ -60,7 +66,7 @@ int main() {
 	system("pause");
 #endif
 
-	grid.gridInitialize(runIndex);
+	grid.gridInitialize();
 	//grid.gridInitialize(!runIndex);
 	
 #if 0
@@ -94,7 +100,7 @@ int main() {
 	velocityFileName = getVelocityFileName();
 	densityFileName = getDensityFileName();
 
-#if TEST_TYPE == STREAM_TEST
+#if TEST_TYPE == STREAM_TEST_PIPE
 	//grid.getCell(1, 1)->initializeVelocity(SpatialDirection::x, 0.9);
 	//grid.getCell(2, 2)->initializeVelocity(SpatialDirection::x, 0.9);
 	//grid.getCell(1, 3)->initializeVelocity(SpatialDirection::x, 0.9);
@@ -103,10 +109,14 @@ int main() {
 	//grid.getCell(3, 2)->initializeVelocity(SpatialDirection::y, -0.9);
 	
 	
-		//grid.getCell(2, 5)->setPopulation(0, CellDirection::west, 3);
+		grid.getCell(1, 2)->setPopulation(0, CellDirection::northEast, 0.8);
+		grid.getCell(1, 2)->setPopulation(1, CellDirection::northEast, 0.8);
+		grid.getCell(2, 2)->computeDensity(runIndex);
+		grid.getCell(2, 2)->computeVelocity(runIndex);
+		grid.getCell(2, 2)->computePopulationsEq();
 
 	//grid.getCell(0, 1)->setPopulation(0, CellDirection::west, 0.9);
-	grid.getCell(2, 2)->setPopulation(0, CellDirection::north, 1.0);
+	//grid.getCell(2, 2)->setPopulation(0, CellDirection::east, 1.0);
 	//grid.getCell(5, 6)->setPopulation(0, CellDirection::west, 0.9);
 #endif
 	
@@ -127,13 +137,14 @@ int main() {
 #endif		
 		if (run % printInterval == 0) {
 			std::cout << "\r Processing: " << run << " of " << nRun;			
-			/*grid.appendGridPoplulationsList(runIndex, populationOutputString);		*/	
+			//grid.appendGridPoplulationsList(runIndex, populationOutputString);
 
 			grid.appendGridNonEqPoplulationsList(runIndex, populationOutputString);
 
 			grid.appendGridVelocityList(runIndex, velocityString);	
 			grid.appendGridDensityList(runIndex, densityString);
 		}
+		//grid.propagate(runIndex);
 		grid.collide(runIndex);		
 		//grid.moveBoundary(runIndex);
 		grid.propagate(runIndex);

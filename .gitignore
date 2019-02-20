@@ -336,4 +336,5 @@ ASALocalRun/
 **/*.gif
 **/*.pdf
 **/*.png
+**/*.xlsx
 **/Not in use/

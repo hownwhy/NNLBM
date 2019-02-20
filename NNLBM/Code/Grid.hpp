@@ -131,9 +131,13 @@ public:
 			for (int x = 0; x < xDimTotal; x++) {
 				if (y < N_Y_SOLID_CELLS || y > yDimTotal - (1 + N_Y_SOLID_CELLS) || x < N_X_SOLID_CELLS || x > xDimTotal - (1 + N_X_SOLID_CELLS)) {
 					cellType = CellType::solid;
-				}
+				}				
 				else if (y == (0 + N_Y_SOLID_CELLS) || y == yDimTotal - (1 + N_Y_SOLID_CELLS)) {
+#if BOOK_BOUNCE_BACK
 					cellType = CellType::wall;
+#else
+					cellType = CellType::solid;
+#endif
 				}
 				else {
 					cellType = CellType::bulk;
@@ -237,14 +241,14 @@ public:
 	//	}
 	//}
 
-	void gridInitialize(const bool runIndex) const {
+	void gridInitialize() const{
 		const int xMargin = N_X_SOLID_CELLS;
 		const int yMargin = N_Y_SOLID_CELLS;
 		field_t rho = 1.0;
 		field_t xVelocity = 0.0;
 		field_t yVelocity = 0.0;
-		//field_t topPlateVelocity = F_TOP_PLATE_VELOCITY;
-		field_t topPlateVelocity = 0.0;
+		field_t topPlateVelocity = F_TOP_PLATE_VELOCITY;
+		//field_t topPlateVelocity = 0.0;
 
 		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
 			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
@@ -263,8 +267,13 @@ public:
 	// Do routines
 	//******************************************************************************************************************
 	void propagate(const bool runIndex) const {
+#if BOOK_BOUNCE_BACK
 		const int xMargin = N_X_SOLID_CELLS;
 		const int yMargin = N_Y_SOLID_CELLS;
+#else
+		const int xMargin = N_X_SOLID_CELLS;
+		const int yMargin = N_Y_SOLID_CELLS;
+#endif
 		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
 			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
 				grid.at(gridPosition(x, y))->propageteTo(runIndex);
@@ -273,8 +282,13 @@ public:
 	}
 	   
 	void collide(const bool runIndex) const {
+#if BOOK_BOUNCE_BACK
 		const int xMargin = N_X_SOLID_CELLS;
 		const int yMargin = N_Y_SOLID_CELLS;
+#else
+		const int xMargin = N_X_SOLID_CELLS;
+		const int yMargin = 2*N_Y_SOLID_CELLS;
+#endif
 		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
 			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
 				grid.at(gridPosition(x, y))->collide(runIndex);
@@ -589,7 +603,7 @@ public:
 			densityStringStream << "{";
 			for (int x = 0; x < xDimTotal; x++) {
 				//if (grid.at(gridPosition(x, y)) != nullptr) {
-				densityStringStream << grid.at(gridPosition(x, y))->getDensity() << ((x < xDimTotal - 1) ? ",\n" : "");
+				densityStringStream << std::setprecision(12) << std::fixed << grid.at(gridPosition(x, y))->getDensity() << std::setprecision(3) << std::defaultfloat << ((x < xDimTotal - 1) ? ",\n" : "");
 				//}
 			}
 
