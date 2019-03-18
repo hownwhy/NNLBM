@@ -71,12 +71,15 @@ void densityListToFile(const std::string string, const std::string filename) {
 
 std::string getVelocityFileName() {
 	std::ostringstream velocityFileNameStream;
-	velocityFileNameStream << std::setprecision(3);
-	velocityFileNameStream << S_FILE_NAME_BASE << "_X" << N_GRID_X_DIM_FLUID
+	velocityFileNameStream << std::setprecision(4);
+	velocityFileNameStream << S_FILE_NAME_BASE 
+		<< "_X" << N_GRID_X_DIM_FLUID
 		<< "_Y" << N_GRID_Y_DIM_FLUID
 		<< "_T" << N_RUN
 		<< "_Step" << N_VELOCITY_PRINT_INTERVAL
 		<< "_Tau" << F_TAU
+		<< "_Re" << RE
+		<< "_LidV" << F_LID_VELOCITY
 		<< "_F" << F_BODY_FORCE_X
 		<< ".txt";
 	return velocityFileNameStream.str();

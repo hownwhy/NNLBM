@@ -122,7 +122,7 @@ public:
 		computePopulationsEq();
 		computeForcePopulations();
 		int populationIndex = 0;
-		for (int cellDirection = 0; cellDirection < nDirections; cellDirection++) {
+		for (int cellDirection = 0; cellDirection < nPopulations; cellDirection++) {
 			populationIndex = getArrayIndex(runIndex, cellDirection);
 			populations_.at(populationIndex)
 				= populations_.at(populationIndex) - (dt * (populations_.at(populationIndex) - populationsEq_.at(cellDirection)) / tau);

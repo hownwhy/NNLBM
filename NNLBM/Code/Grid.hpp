@@ -17,10 +17,15 @@
 class Grid {
 	
 private:
-	static const int xDimFluid = N_GRID_X_DIM_FLUID;
-	static const int yDimFluid = N_GRID_Y_DIM_FLUID;
+#if TEST_TYPE & STREAM_TEST_PIPE + COUETTE_TEST + POISEUILLE_TEST
 	static const int N_X_SOLID_CELLS = 0;
 	static const int N_Y_SOLID_CELLS = 1;
+#elif TEST_TYPE & STREAM_TEST_BOX + CAVITY_TEST
+	static const int N_X_SOLID_CELLS = 1;
+	static const int N_Y_SOLID_CELLS = 1;
+#endif
+	static const int xDimFluid = N_GRID_X_DIM_FLUID;
+	static const int yDimFluid = N_GRID_Y_DIM_FLUID;
 	static const int xDimTotal = xDimFluid + 2 * N_X_SOLID_CELLS;
 	static const int yDimTotal = yDimFluid + 2 * N_Y_SOLID_CELLS;
 
@@ -53,7 +58,12 @@ public:
 
 		int dx = 0;
 		int dy = 0;
+
+#if TEST_TYPE & STREAM_TEST_PIPE + COUETTE_TEST + POISEUILLE_TEST
 		bool periodic = (x == 0 + N_X_SOLID_CELLS || x == xDimTotal - 1 - N_X_SOLID_CELLS);
+#elif TEST_TYPE & STREAM_TEST_BOX + CAVITY_TEST
+		bool periodic = 0;
+#endif
 		
 		// non-periodic cell
 		if (!periodic) {
@@ -242,13 +252,12 @@ public:
 	//}
 
 	void gridInitialize() const{
-		const int xMargin = N_X_SOLID_CELLS;
-		const int yMargin = N_Y_SOLID_CELLS;
+		const int xMargin = 0;// N_X_SOLID_CELLS;
+		const int yMargin = 0;// N_Y_SOLID_CELLS;
 		field_t rho = 1.0;
 		field_t xVelocity = 0.0;
 		field_t yVelocity = 0.0;
-		field_t topPlateVelocity = F_TOP_PLATE_VELOCITY;
-		//field_t topPlateVelocity = 0.0;
+		field_t topPlateVelocity = F_LID_VELOCITY;
 
 		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
 			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
@@ -286,7 +295,7 @@ public:
 		const int xMargin = N_X_SOLID_CELLS;
 		const int yMargin = N_Y_SOLID_CELLS;
 #else
-		const int xMargin = N_X_SOLID_CELLS;
+		const int xMargin = 2*N_X_SOLID_CELLS;
 		const int yMargin = 2*N_Y_SOLID_CELLS;
 #endif
 		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
@@ -559,11 +568,11 @@ public:
 		const int xMargin = N_X_SOLID_CELLS;
 		const int yMargin = N_Y_SOLID_CELLS;
 		std::ostringstream velocityStringStream;
-		velocityStringStream << std::setprecision(3);
+		velocityStringStream << std::setprecision(4);
 		velocityStringStream << velocityLists;
 		if (velocityStringStream.str() == "") {
-			velocityStringStream << "{" << xDimTotal - (2 * N_X_SOLID_CELLS) << "," << yDimTotal - (2 * N_Y_SOLID_CELLS) << "," << F_TAU << "," << std::setprecision(12) << std::fixed << F_BODY_FORCE_X << "," << F_BODY_FORCE_Y
-				<< std::setprecision(3) << std::defaultfloat << "},\n\n" << "{";
+			velocityStringStream << "{" << xDimTotal - (2 * N_X_SOLID_CELLS) << "," << yDimTotal - (2 * N_Y_SOLID_CELLS) << "," << N_RUN << "," << F_TAU << "," << RE << "," << F_LID_VELOCITY << "," << F_BODY_FORCE_X << "," << F_BODY_FORCE_Y
+				<< std::setprecision(4) << "},\n\n" << "{";
 		}
 		else {
 			velocityStringStream << ",\n\n{";

@@ -30,13 +30,18 @@ int main() {
 	std::string densityString = "";
 	std::string densityFileName = "";
 	
-	
-	if (TEST_TYPE & (STREAM_TEST_PIPE | COUETTE_TEST | POISEUILLE_TEST)) {
-		grid.makePipeGeometry();
-	}
-	else if (TEST_TYPE & (STREAM_TEST_BOX | CAVITY_TEST)) {
-		grid.makeBoxGeometry();
-	}
+#if TEST_TYPE & STREAM_TEST_PIPE + COUETTE_TEST + POISEUILLE_TEST
+	grid.makePipeGeometry();
+#elif TEST_TYPE & STREAM_TEST_BOX + CAVITY_TEST
+	grid.makeBoxGeometry();
+#endif
+
+	//if (TEST_TYPE & (STREAM_TEST_PIPE | COUETTE_TEST | POISEUILLE_TEST)) {
+	//	grid.makePipeGeometry();
+	//}
+	//else if (TEST_TYPE & (STREAM_TEST_BOX | CAVITY_TEST)) {
+	//	grid.makeBoxGeometry();
+	//}
 
 #if 0
 	grid.printGeometry();
@@ -95,12 +100,12 @@ int main() {
 
 #if 1	
 	const int nRun = N_RUN;
-	const int printInterval = N_VELOCITY_PRINT_INTERVAL;
+	int printInterval = N_VELOCITY_PRINT_INTERVAL;
 
 	velocityFileName = getVelocityFileName();
 	densityFileName = getDensityFileName();
 
-#if TEST_TYPE == STREAM_TEST_PIPE
+#if TEST_TYPE == STREAM_TEST_PIPE | STREAM_TEST_BOX
 	//grid.getCell(1, 1)->initializeVelocity(SpatialDirection::x, 0.9);
 	//grid.getCell(2, 2)->initializeVelocity(SpatialDirection::x, 0.9);
 	//grid.getCell(1, 3)->initializeVelocity(SpatialDirection::x, 0.9);
@@ -109,11 +114,11 @@ int main() {
 	//grid.getCell(3, 2)->initializeVelocity(SpatialDirection::y, -0.9);
 	
 	
-		grid.getCell(1, 2)->setPopulation(0, CellDirection::northEast, 0.8);
-		grid.getCell(1, 2)->setPopulation(1, CellDirection::northEast, 0.8);
-		grid.getCell(2, 2)->computeDensity(runIndex);
+		//grid.getCell(1, 2)->setPopulation(0, CellDirection::east, 0.8);
+		//grid.getCell(1, 2)->setPopulation(1, CellDirection::northEast, 2);
+		/*grid.getCell(2, 2)->computeDensity(runIndex);
 		grid.getCell(2, 2)->computeVelocity(runIndex);
-		grid.getCell(2, 2)->computePopulationsEq();
+		grid.getCell(2, 2)->computePopulationsEq();*/
 
 	//grid.getCell(0, 1)->setPopulation(0, CellDirection::west, 0.9);
 	//grid.getCell(2, 2)->setPopulation(0, CellDirection::east, 1.0);
@@ -143,6 +148,8 @@ int main() {
 
 			grid.appendGridVelocityList(runIndex, velocityString);	
 			grid.appendGridDensityList(runIndex, densityString);
+			
+			printInterval = printInterval * 2;
 		}
 		//grid.propagate(runIndex);
 		grid.collide(runIndex);		

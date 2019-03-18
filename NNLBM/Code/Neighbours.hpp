@@ -29,7 +29,7 @@ public:
 		//std::cout << "getNeighbour ARRAY_INDEX : " << direction << std::endl;
 		assert(("getNeighbour: arrayIndex is negative", direction >= 0));
 		assert(("getNeighbour: arrayIndex to high", direction < nNeighbours));
-		return neighbours.at(direction);
+		return neighbours.at(direction);	
 	}
 
 	/*template<typename CellType>

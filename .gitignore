@@ -332,6 +332,7 @@ ASALocalRun/
 # Added by Bjarte (January 5, 2019)
 # Ignore SimulationOutput directory
 **/SimulationOutput
+**/Mathematica
 **/*.nb
 **/*.gif
 **/*.pdf

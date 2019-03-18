@@ -12,6 +12,7 @@ public:
 	//*****************************************************************************************
 	// Do functions	
 
+// Testing different bounce back methods
 #if BOOK_BOUNCE_BACK
 	   
 	void propageteTo(const bool runIndex) override{

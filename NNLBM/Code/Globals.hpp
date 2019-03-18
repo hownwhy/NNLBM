@@ -30,68 +30,72 @@ static const int nDirections = 8;
 #define CAVITY_TEST			 0x08
 #define POISEUILLE_TEST		 0x10
 
-#define TEST_TYPE 0x10
+#define TEST_TYPE 0x08
 
 #if TEST_TYPE == STREAM_TEST_PIPE
-const int N_RUN = 10;
-const int N_VELOCITY_PRINT_INTERVAL = 1;
-const int N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
-const int N_GRID_X_DIM_FLUID = 3;
-const int N_GRID_Y_DIM_FLUID = 3;
-const field_t F_TAU = 10;
-const field_t F_BODY_FORCE_X = 0;
-const field_t F_BODY_FORCE_Y = 0;
-const field_t F_TOP_PLATE_VELOCITY = 0.000;
-#endif
-
-#if TEST_TYPE == STREAM_TEST_BOX
-const int N_RUN = 20;
+const int N_RUN = 5;
 const int N_VELOCITY_PRINT_INTERVAL = 1;
 const int N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
 const int N_GRID_X_DIM_FLUID = 5;
 const int N_GRID_Y_DIM_FLUID = 5;
-const field_t F_TAU = 1.00;
+const field_t F_TAU = 100;
 const field_t F_BODY_FORCE_X = 0;
 const field_t F_BODY_FORCE_Y = 0;
-const field_t F_TOP_PLATE_VELOCITY = 1;
+const field_t F_TOP_PLATE_VELOCITY = 0.8;
+#endif
+
+#if TEST_TYPE == STREAM_TEST_BOX
+const int N_RUN = 30;
+const int N_VELOCITY_PRINT_INTERVAL = 1;
+const int N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
+const int N_GRID_X_DIM_FLUID = 5;
+const int N_GRID_Y_DIM_FLUID = 5;
+const field_t RE = 1;
+const field_t F_LID_VELOCITY = 1;
+const field_t F_BODY_FORCE_X = 0.;
+const field_t F_BODY_FORCE_Y = 0.;
+const field_t F_TAU = 1;
 #endif
 
 #if TEST_TYPE == COUETTE_TEST
-const int N_RUN = 150000;
-const int N_VELOCITY_PRINT_INTERVAL = 15000;
+const int N_RUN = 1<<(17);
+const int N_VELOCITY_PRINT_INTERVAL = 2;
 const int N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
 const int N_GRID_X_DIM_FLUID = 2;
-const int N_GRID_Y_DIM_FLUID = 129;
-const field_t F_TAU = 0.6161;
-//const field_t F_BODY_FORCE_X = 1.00e-8;
-const field_t F_BODY_FORCE_X = 0;
-const field_t F_BODY_FORCE_Y = 0;
-const field_t F_TOP_PLATE_VELOCITY = 0.003;
+const int N_GRID_Y_DIM_FLUID = 100;
+const field_t RE = 60;
+const field_t F_LID_VELOCITY = 0.1;
+const field_t F_BODY_FORCE_X = 0.;
+const field_t F_BODY_FORCE_Y = 0.;
+const field_t F_TAU = 0.5 + (3. * F_LID_VELOCITY * N_GRID_Y_DIM_FLUID / RE);
 #endif
 
 #if TEST_TYPE == CAVITY_TEST
-const int N_RUN = 100000;
-const int N_VELOCITY_PRINT_INTERVAL = 5000;
-const int N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
-const int N_GRID_X_DIM_FLUID = 129;
-const int N_GRID_Y_DIM_FLUID = 129;
-const field_t F_TAU = 0.6161;
-//const field_t F_BODY_FORCE_X = 1.00e-8;
-const field_t F_BODY_FORCE_X = 0;
-const field_t F_BODY_FORCE_Y = 0;
-const field_t F_TOP_PLATE_VELOCITY = 0.03;
+const int N_RUN						= 1<<17;
+const int N_VELOCITY_PRINT_INTERVAL = 2;
+const int N_DENSITY_PRINT_INTERVAL	= N_VELOCITY_PRINT_INTERVAL;
+const int N_GRID_X_DIM_FLUID		= 100;
+const int N_GRID_Y_DIM_FLUID		= 100;
+const field_t RE					= 400;
+const field_t F_LID_VELOCITY		= 0.1;
+const field_t F_BODY_FORCE_X		= 0.;
+const field_t F_BODY_FORCE_Y		= 0.;
+const field_t F_TAU = 0.5 + (3. * F_LID_VELOCITY * N_GRID_X_DIM_FLUID / RE);
+
 #endif
 
 #if TEST_TYPE == POISEUILLE_TEST
-const int N_RUN = 100000;
-const int N_VELOCITY_PRINT_INTERVAL = 10000;// N_RUN / 10;
+const int N_RUN = 1<<17;
+const int N_VELOCITY_PRINT_INTERVAL = 2;
 const int N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
 const int N_GRID_X_DIM_FLUID = 2;
-const int N_GRID_Y_DIM_FLUID = 58;
-const field_t F_TAU = 0.554;
-const field_t F_BODY_FORCE_X = 0.000001284185;
-const field_t F_BODY_FORCE_Y = 0;
-const field_t F_TOP_PLATE_VELOCITY = 0;
+const int N_GRID_Y_DIM_FLUID = 100;
+const field_t RE = 100;
+const field_t F_LID_VELOCITY = 0.;
+const field_t F_MAX_VELOCITY = 0.1;
+const field_t F_BODY_FORCE_X = 4. * F_MAX_VELOCITY * F_MAX_VELOCITY / N_GRID_Y_DIM_FLUID / RE;
+const field_t F_BODY_FORCE_Y = 0.;// 4. * F_LID_VELOCITY * F_LID_VELOCITY / N_GRID_Y_DIM_FLUID / RE;
+const field_t F_TAU = 0.5 + (3. * F_MAX_VELOCITY * N_GRID_Y_DIM_FLUID / RE);
 #endif
 
 const std::string S_BC_BASED = "BCBased/";
@@ -114,7 +118,7 @@ const std::string S_DENSITY_OUTPUT_FULL_PATH = S_OUTPUT_DIRECTORY_BASE + S_DENSI
 // Velocity related
 const std::string S_FILE_NAME_BASE = "Velocity";
 const std::string S_FLOW_TYPE = "VelocityTests/";
-const std::string S_FLOW_SUBCATEGORY = "";
+const std::string S_FLOW_SUBCATEGORY = "Cavity Simulations For Poster/";
 const std::string S_DIRECTORY_VELOCITY_OUTPUT = S_OUTPUT_DIRECTORY_BASE + S_FLOW_TYPE + S_FLOW_SUBCATEGORY;
 //const std::string S_DIRECTORY_VELOCITY_OUTPUT = "";
 
