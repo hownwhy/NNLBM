@@ -1,6 +1,8 @@
 #pragma once
 #include "Cell.hpp"
 #include <iostream>
+#include <chrono>
+using Clock = std::chrono::high_resolution_clock;
 
 class BulkCell : public Cell
 {
@@ -12,50 +14,54 @@ public:
 	//*****************************************************************************************
 	// Do functions	
 
-// Testing different bounce back methods
-#if BOOK_BOUNCE_BACK
-	   
-	void propageteTo(const bool runIndex) override{
-		field_t propagationPopulation;
-		std::shared_ptr<Cell> targetCell;
 
-		for (int direction = 0; direction < nDirections; direction++) {
-			propagationPopulation = populations_.at(getArrayIndex(runIndex, direction));
-			targetCell = neighbours_.getNeighbour(direction);
-			targetCell->setReceived(!runIndex, direction, propagationPopulation);
-		}
-	}
-#else
-	void setReceived(const bool runIndex, const int populationIndex, const field_t fieldValue) override {
-		int arrayIndex = getArrayIndex(runIndex, populationIndex);
-		//std::cout << "setPopulation ARRAY_INDEX : " << arrayIndex << std::endl;;
-		/*assert(("setPopulations: arrayIndex is negative", arrayIndex >= 0));
-		assert(("setPopulations: arrayIndex to high", arrayIndex < nFieldDuplicates * nPopulations));*/
-		populations_.at(arrayIndex) = fieldValue;
-	}
+	void collideAndPropagate() override {				
+		computeDensity();
+		computeVelocity();
+		computePopulationsEq();
+		//computeForcePopulations();
+
+#if DEBUG
+		nodeCalcCounter++;
+		auto t1 = Clock::now();
 #endif
 
-	void collideAndPropagate(const bool runIndex) override {
-		//std::cout << "\n\nDensity before computeDensity = " << density_;
-		computeDensity(runIndex);
-		//std::cout << "\n\nDensity after computeDensity = " << density_;
-		computeVelocity(runIndex);
-		computePopulationsEq();
-		computeForcePopulations();
-		int populationIndex = 0;
-		int populationIndex2 = 0;
-		field_t propagationPopulation = 0;
-		std::shared_ptr<Cell> targetCell;
-		for (int cellDirection = 0; cellDirection < nDirections; cellDirection++) {
-			populationIndex = getArrayIndex(runIndex, cellDirection);
-			populationIndex2 = getArrayIndex(!runIndex, cellDirection);
-			targetCell = neighbours_.getNeighbour(cellDirection);
-			propagationPopulation = populations_.at(populationIndex) - dt * (populations_.at(populationIndex) - populationsEq_.at(cellDirection)) / tau;
-			// Add force term
-			propagationPopulation += ((1.0 - (dt / (2 * tau))) * forcePopulations_.at(cellDirection));
-
-			targetCell->setReceived(!runIndex, cellDirection, propagationPopulation);
+		for (int cellDirection = 0; cellDirection < nCellDirections; cellDirection++) {
+			populations_[currentPopulationIndexOffset_ + cellDirection] = (1 - (dt / tau)) * populations_[currentPopulationIndexOffset_ + cellDirection] + (dt / tau) * populationsEq_[cellDirection] // Collision			
+				;// +forcePopulations_[cellDirection]; // Adding force term
+			
+			neighbours_[cellDirection]->setReceived(populations_, (CellDirection)cellDirection);
 		}
+		// Updating rest population (no propagation)
+		populations_[getArrayIndex(!runIndex_, CellDirection::rest)] = (1 - (dt / tau)) * populations_[currentPopulationIndexOffset_ + CellDirection::rest] + (dt / tau) * populationsEq_[CellDirection::rest] // Collision			
+			;//+ forcePopulations_[CellDirection::rest]; // Adding force term
+
+#if DEBUG
+		auto t2 = Clock::now();
+		loopTime = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
+		accumulatedLoopTime += loopTime;
+		//accumulatedLoopTime += loopTime > 1000 * (averageLoopTime = accumulatedLoopTime / nodeCalcCounter) && nodeCalcCounter > 1? averageLoopTime : loopTime ;
+		averageLoopTime = accumulatedLoopTime / nodeCalcCounter;
+		
+		// This is an attemt at counting cach misses by loop times deviating considerably from the average
+		if (loopTime > 10 * averageLoopTime) {
+			cacheMiss++;			
+		}
+#endif
+
+	}
+
+
+	/*void setReceived(std::array<field_t, nFieldDuplicates * nPopulations> &sourcePopulations, const CellDirection cellDirection) override {
+		populations_.at(nextPopulationIndexOffset_ + cellDirection) = sourcePopulations.at(currentPopulationIndexOffset_ + cellDirection);
+	}*/
+
+	/*void setReceived(std::array<field_t, nFieldDuplicates * nPopulations> &sourcePopulations, const CellDirection &cellDirection) override {
+		populations_[nextPopulationIndexOffset_ + cellDirection] = sourcePopulations[currentPopulationIndexOffset_ + cellDirection];
+	}*/
+
+	void setReceived(field_t *sourcePopulations, const CellDirection &cellDirection) override {
+		populations_[nextPopulationIndexOffset_ + cellDirection] = sourcePopulations[currentPopulationIndexOffset_ + cellDirection];
 	}
 
 	char getCellTypeChar() const override {

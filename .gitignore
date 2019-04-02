@@ -339,3 +339,10 @@ ASALocalRun/
 **/*.png
 **/*.xlsx
 **/Not in use/
+**/Parallell17/
+**/PerformanceTest01/
+**/ThreadsTests/
+**/PolymorphismTests01/
+**/CppAMP/
+**/MemberFunctionPointers/
+

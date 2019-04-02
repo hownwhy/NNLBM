@@ -15,26 +15,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Code\Grid.hpp">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
     <ClInclude Include="Code\InputOutput.hpp">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\Neighbours.hpp">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\Cell\WallCell.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\Cell\SolidCell.hpp">
-      <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\Cell\Cell.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Code\Cell\BulkCell.hpp">
-      <Filter>Resource Files</Filter>
     </ClInclude>
     <ClInclude Include="Code\Globals.hpp">
       <Filter>Resource Files</Filter>
@@ -43,6 +25,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Code\Not in use\Geometry.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Grid.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Cell\SolidCell.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Cell\Cell.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Cell\BulkCell.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

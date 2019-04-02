@@ -1,14 +1,11 @@
 #pragma once
 #include "../Globals.hpp"
-#include "../Neighbours.hpp"
 #include <iostream>
 #include <string>
 #include <sstream>
 #include <iomanip>
-//#include <array>
+#include <array>
 #include <memory>
-
-
 
 const enum CellType : int
 {
@@ -44,13 +41,17 @@ const enum SpatialDirection : int
 
 // TODO: Where should these static constants be? Here it will be accessible to all who include the hpp file.
 // If declareedd as a member, it has to be initialized in a cpp file...
+static const int nCellDirections = 8;
 static const int nPopulations = 9;		// Number of poulations for species
 static const int nFieldDuplicates = 2;	// Number of field "duplicats" (for temporary storage)(probably no more than 2)
 static const int nDimensions = 2;
-static const field_t dt = 1;
+static const field_t dt = 1.;
 
 // poiseuille flow
 static const field_t tau = F_TAU;
+//static const field_t tauInverse = 1. / tau;
+//static const field_t dtOverTau = dt / tau;
+//static const field_t oneMinusDtOverTau = 1. - dtOverTau;
 static const std::array<field_t, 2> bodyForce = { F_BODY_FORCE_X, F_BODY_FORCE_Y };
 
 
@@ -59,16 +60,22 @@ static const std::array<field_t, 2> bodyForce = { F_BODY_FORCE_X, F_BODY_FORCE_Y
 class Cell {
 
 protected:
-	Neighbours neighbours_;
-	std::array<field_t, nFieldDuplicates * nPopulations> populations_;
-	std::array<field_t, nPopulations> populationsEq_;	
+	//Neighbours neighbours_;
+	std::array<std::shared_ptr<Cell>, nCellDirections> neighbours_;
+	/*std::array<field_t, nFieldDuplicates * nPopulations> populations_;*/
+	field_t populations_[nFieldDuplicates * nPopulations];
+	std::array<field_t, nPopulations> populationsEq_;
 	std::array<field_t, nPopulations> forcePopulations_;
 	std::array<field_t, nDimensions> velocity_;
 	field_t density_;
-	std::array<field_t, nPopulations> movingPlateTerm;
+	
+	//std::array<field_t, nPopulations> movingPlateTerm;
+	static bool runIndex_;
+	static int currentPopulationIndexOffset_;
+	static int nextPopulationIndexOffset_;
+
 
 public:
-
 	~Cell() = default;
 	Cell() = default;
 
@@ -80,13 +87,32 @@ public:
 	// This function gives the opposite direction of what you put in.
 	// This is also the reason why I chose to not follow the convension
 	// having the rest direction be the 0 direction. 	
-	static const int threeHalfDirection = (3 * nDirections) / 2;
+	static const int threeHalfDirection = (3 * nCellDirections) / 2;
 	inline int reverseDirectionIndex(const int direction) const {
-		return ((direction + threeHalfDirection) % nDirections);
+		return ((direction + threeHalfDirection) % nCellDirections);
+	}
+
+	//TODO: const
+	void setNeighbour(std::shared_ptr<Cell> cell, const CellDirection cellDirection) {
+		neighbours_.at(cellDirection) = cell;
+	}
+
+	std::shared_ptr<Cell> getNeighbour(const CellDirection cellDirection) const {
+		return neighbours_.at(cellDirection);
 	}
 
 	//*****************************************************************************************
 	// Cell initialization
+
+	//void initialize(const field_t density, const field_t xVelocity, const field_t yVelocity) {
+	//	density_ = density;
+	//	velocity_.at(SpatialDirection::x) = xVelocity;
+	//	velocity_.at(SpatialDirection::y) = yVelocity;
+	//	//std::cout << "density = " << density_ << "\txVelocity = " << velocity_.at(SpatialDirection::x) << "\tyVelocity = " << velocity_.at(SpatialDirection::y) << std::endl;
+	//	computePopulationsEq();
+	//	std::copy(populationsEq_.begin(), populationsEq_.end(), populations_.begin());
+	//	std::copy(populationsEq_.begin(), populationsEq_.end(), populations_.begin() + nPopulations);
+	//}
 
 	void initialize(const field_t density, const field_t xVelocity, const field_t yVelocity) {
 		density_ = density;
@@ -94,184 +120,224 @@ public:
 		velocity_.at(SpatialDirection::y) = yVelocity;
 		//std::cout << "density = " << density_ << "\txVelocity = " << velocity_.at(SpatialDirection::x) << "\tyVelocity = " << velocity_.at(SpatialDirection::y) << std::endl;
 		computePopulationsEq();
-		std::copy(populationsEq_.begin(), populationsEq_.end(), populations_.begin());
-		std::copy(populationsEq_.begin(), populationsEq_.end(), populations_.begin() + nPopulations);
+		for (int populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
+			populations_[populationIndex] = populationsEq_[populationIndex];
+			populations_[populationIndex + nPopulations] = populationsEq_[populationIndex];
+		}	
 	}
 
-	void initializeDensity(const field_t density) {
-		density_ = density;
-		computePopulationsEq();
-		std::copy(populationsEq_.begin(), populationsEq_.end(), populations_.begin());
-	}
+	//void initializeDensity(const field_t density) {
+	//	density_ = density;
+	//	computePopulationsEq();
+	//	std::copy(populationsEq_.begin(), populationsEq_.end(), populations_.begin());
+	//}
 
-	void initializeVelocity(const SpatialDirection direction, const field_t velocity) {
-		velocity_.at(direction) = velocity; // -((bodyForce.at(direction) * dt) / (density_));
-		computePopulationsEq();
-		std::copy(populationsEq_.begin(), populationsEq_.end(), populations_.begin());
-	}
+	//void initializeVelocity(const SpatialDirection direction, const field_t velocity) {
+	//	velocity_.at(direction) = velocity; // -((bodyForce.at(direction) * dt) / (density_));
+	//	computePopulationsEq();
+	//	std::copy(populationsEq_.begin(), populationsEq_.end(), populations_.begin());
+	//}
 
 	//*****************************************************************************************
 	// Do functions	
 
-	//virtual void collide(const bool runIndex) = 0;
-	void collide(const bool runIndex) {
-		//std::cout << "\n\nDensity before computeDensity = " << density_;
-		computeDensity(runIndex);
-		//std::cout << "\n\nDensity after computeDensity = " << density_;
-		computeVelocity(runIndex);
-		computePopulationsEq();
-		computeForcePopulations();
-		int populationIndex = 0;
-		for (int cellDirection = 0; cellDirection < nPopulations; cellDirection++) {
-			populationIndex = getArrayIndex(runIndex, cellDirection);
-			populations_.at(populationIndex)
-				= populations_.at(populationIndex) - (dt * (populations_.at(populationIndex) - populationsEq_.at(cellDirection)) / tau);
-			// Add force term
-			populations_.at(populationIndex) += forcePopulations_.at(cellDirection);
-		}
-	}
-
-
-
-
-#if BOOK_BOUNCE_BACK
-	virtual void propageteTo(const bool runIndex) = 0;
-	
-	void setReceived(const bool runIndex, const int populationIndex, const field_t fieldValue) {
-		int arrayIndex = getArrayIndex(runIndex, populationIndex);
-		populations_.at(arrayIndex) = fieldValue;
-	}
-#else
-
-	// TODO: The local variables used for readability may (or may not) decrease performance. Find out. 
-	void propageteTo(const bool runIndex) const {
-		field_t currentPopulation;
-		std::shared_ptr<Cell> targetCell;
-
-		for (int direction = 0; direction < nDirections; direction++) {
-			currentPopulation = populations_.at(getArrayIndex(runIndex, direction));
-			targetCell = neighbours_.getNeighbour(direction);
-			targetCell->setReceived(!runIndex, direction, currentPopulation);
-		}
+	static void setRunStep(const bool runIndex) {
+		runIndex_ = runIndex;
+		currentPopulationIndexOffset_ = nPopulations * runIndex;
+		nextPopulationIndexOffset_ = nPopulations * !runIndex;
+	}		
+	   	  
+	virtual void collideAndPropagate() {
+		std::cout << "\nInside Cell::collideAndPropagate()";
+		system("pause");
 	}
 	
-	virtual void setReceived(const bool runIndex, const int populationIndex, const field_t fieldValue) = 0;
-#endif
-
-
-
-	virtual void collideAndPropagate(const bool runIndex) = 0;
-
-	
+	/*virtual void setReceived(std::array<field_t, nFieldDuplicates * nPopulations> &sourcePopulations, const CellDirection &cellDirection) = 0;*/
+	//virtual void setReceived(std::shared_ptr<Cell> sourceCell, const CellDirection cellDirection) = 0;
+	virtual void setReceived(field_t *sourcePopulations, const CellDirection &cellDirection) = 0;
 	
 
-	void computeDensity(const bool runIndex) {
+	void computeDensity() {
+		/*density_ =
+			populations_.at(currentPopulationIndexOffset_ + CellDirection::east)
+			+ populations_.at(currentPopulationIndexOffset_ + CellDirection::northEast)
+			+ populations_.at(currentPopulationIndexOffset_ + CellDirection::north)
+			+ populations_.at(currentPopulationIndexOffset_ + CellDirection::northWest)
+			+ populations_.at(currentPopulationIndexOffset_ + CellDirection::west)
+			+ populations_.at(currentPopulationIndexOffset_ + CellDirection::southWest)
+			+ populations_.at(currentPopulationIndexOffset_ + CellDirection::south)
+			+ populations_.at(currentPopulationIndexOffset_ + CellDirection::southEast)
+			+ populations_.at(currentPopulationIndexOffset_ + CellDirection::rest);*/
 		density_ =
-			populations_.at(getArrayIndex(runIndex, CellDirection::east))
-			+ populations_.at(getArrayIndex(runIndex, CellDirection::northEast))
-			+ populations_.at(getArrayIndex(runIndex, CellDirection::north))
-			+ populations_.at(getArrayIndex(runIndex, CellDirection::northWest))
-			+ populations_.at(getArrayIndex(runIndex, CellDirection::west))
-			+ populations_.at(getArrayIndex(runIndex, CellDirection::southWest))
-			+ populations_.at(getArrayIndex(runIndex, CellDirection::south))
-			+ populations_.at(getArrayIndex(runIndex, CellDirection::southEast))
-			+ populations_.at(getArrayIndex(runIndex, CellDirection::rest));
+			populations_[currentPopulationIndexOffset_ + CellDirection::east]
+			+ populations_[currentPopulationIndexOffset_ + CellDirection::northEast]
+			+ populations_[currentPopulationIndexOffset_ + CellDirection::north]
+			+ populations_[currentPopulationIndexOffset_ + CellDirection::northWest]
+			+ populations_[currentPopulationIndexOffset_ + CellDirection::west]
+			+ populations_[currentPopulationIndexOffset_ + CellDirection::southWest]
+			+ populations_[currentPopulationIndexOffset_ + CellDirection::south]
+			+ populations_[currentPopulationIndexOffset_ + CellDirection::southEast]
+			+ populations_[currentPopulationIndexOffset_ + CellDirection::rest];
 	}
 
-	void computeVelocity(const bool runIndex) {
-		velocity_.at(SpatialDirection::x) =
-			((populations_.at(getArrayIndex(runIndex, CellDirection::east))
-				+ populations_.at(getArrayIndex(runIndex, CellDirection::northEast))
-				+ populations_.at(getArrayIndex(runIndex, CellDirection::southEast))
-				- populations_.at(getArrayIndex(runIndex, CellDirection::west))
-				- populations_.at(getArrayIndex(runIndex, CellDirection::northWest))
-				- populations_.at(getArrayIndex(runIndex, CellDirection::southWest))) / density_) + ((1 * bodyForce.at(SpatialDirection::x) * dt) / (2 * density_));
+	void computeVelocity() {
+		/*	field_t densityInverse = 1 / density_;
+			velocity_.at(SpatialDirection::x) =
+				((populations_.at(currentPopulationIndexOffset_ + CellDirection::east)
+					+ populations_.at(currentPopulationIndexOffset_ + CellDirection::northEast)
+					+ populations_.at(currentPopulationIndexOffset_ + CellDirection::southEast)
+					- populations_.at(currentPopulationIndexOffset_ + CellDirection::west)
+					- populations_.at(currentPopulationIndexOffset_ + CellDirection::northWest)
+					- populations_.at(currentPopulationIndexOffset_ + CellDirection::southWest)) * densityInverse) + ((1 * bodyForce.at(SpatialDirection::x) * dt) * 0.5 * densityInverse);
+
+			velocity_.at(SpatialDirection::y) =
+				((populations_.at(currentPopulationIndexOffset_ + CellDirection::north)
+					+ populations_.at(currentPopulationIndexOffset_ + CellDirection::northEast)
+					+ populations_.at(currentPopulationIndexOffset_ + CellDirection::northWest)
+					- populations_.at(currentPopulationIndexOffset_ + CellDirection::south)
+					- populations_.at(currentPopulationIndexOffset_ + CellDirection::southEast)
+					- populations_.at(currentPopulationIndexOffset_ + CellDirection::southWest)) * densityInverse) + ((1 * bodyForce.at(SpatialDirection::y) * dt) * 0.5 * densityInverse);*/
+
+		/*velocity_.at(SpatialDirection::x) =
+			((populations_.at(currentPopulationIndexOffset_ + CellDirection::east)
+				+ populations_.at(currentPopulationIndexOffset_ + CellDirection::northEast)
+				+ populations_.at(currentPopulationIndexOffset_ + CellDirection::southEast)
+				- populations_.at(currentPopulationIndexOffset_ + CellDirection::west)
+				- populations_.at(currentPopulationIndexOffset_ + CellDirection::northWest)
+				- populations_.at(currentPopulationIndexOffset_ + CellDirection::southWest)) / density_) + ((1 * bodyForce.at(SpatialDirection::x) * dt) / (2 * density_));
 
 		velocity_.at(SpatialDirection::y) =
-			((populations_.at(getArrayIndex(runIndex, CellDirection::north))
-				+ populations_.at(getArrayIndex(runIndex, CellDirection::northEast))
-				+ populations_.at(getArrayIndex(runIndex, CellDirection::northWest))
-				- populations_.at(getArrayIndex(runIndex, CellDirection::south))
-				- populations_.at(getArrayIndex(runIndex, CellDirection::southEast))
-				- populations_.at(getArrayIndex(runIndex, CellDirection::southWest))) / density_) + ((1 * bodyForce.at(SpatialDirection::y) * dt) / (2 * density_));
+			((populations_.at(currentPopulationIndexOffset_ + CellDirection::north)
+				+ populations_.at(currentPopulationIndexOffset_ + CellDirection::northEast)
+				+ populations_.at(currentPopulationIndexOffset_ + CellDirection::northWest)
+				- populations_.at(currentPopulationIndexOffset_ + CellDirection::south)
+				- populations_.at(currentPopulationIndexOffset_ + CellDirection::southEast)
+				- populations_.at(currentPopulationIndexOffset_ + CellDirection::southWest)) / density_) + ((1 * bodyForce.at(SpatialDirection::y) * dt) / (2 * density_));*/
+
+		//TODO: 0.5*
+		velocity_[SpatialDirection::x] =
+			((populations_[currentPopulationIndexOffset_ + CellDirection::east]
+				+ populations_[currentPopulationIndexOffset_ + CellDirection::northEast]
+				+ populations_[currentPopulationIndexOffset_ + CellDirection::southEast]
+				- populations_[currentPopulationIndexOffset_ + CellDirection::west]
+				- populations_[currentPopulationIndexOffset_ + CellDirection::northWest]
+				- populations_[currentPopulationIndexOffset_ + CellDirection::southWest]) / density_) + ((tau * bodyForce[SpatialDirection::x] * dt) / (1 * density_));
+
+		velocity_[SpatialDirection::y] =
+			((populations_[currentPopulationIndexOffset_ + CellDirection::north]
+				+ populations_[currentPopulationIndexOffset_ + CellDirection::northEast]
+				+ populations_[currentPopulationIndexOffset_ + CellDirection::northWest]
+				- populations_[currentPopulationIndexOffset_ + CellDirection::south]
+				- populations_[currentPopulationIndexOffset_ + CellDirection::southEast]
+				- populations_[currentPopulationIndexOffset_ + CellDirection::southWest]) / density_) + ((tau * bodyForce[SpatialDirection::y] * dt) / (1 * density_));
 	}
-	
+
 	void computePopulationsEq() {
-		field_t ux = velocity_.at(SpatialDirection::x);
-		field_t uy = velocity_.at(SpatialDirection::y);
+		/*field_t ux = velocity_.at(SpatialDirection::x);
+		field_t uy = velocity_.at(SpatialDirection::y);*/
+
+		field_t ux = velocity_[SpatialDirection::x];
+		field_t uy = velocity_[SpatialDirection::y];
+
 		field_t uxSqr = ux * ux;
 		field_t uySqr = uy * uy;
 		field_t uxuy = ux * uy;
 		field_t uSqr = uxSqr + uySqr;
+
+		//// Weight fctors
+		//const field_t weightFactorR = 2. / 9;	// Rest
+		//const field_t weightFactorHV = 1. / 18;	// Horizontal/Vertical
+		//const field_t weightFactorD = 1. / 36;		// Diagonal
+
+		//// Weights
+		//field_t weightR = density_ * weightFactorR;	// Rest
+		//field_t weightHV = density_ * weightFactorHV;	// Horizontal/Vertical
+		//field_t weightD = density_ * weightFactorD;		// Diagonal
 
 		// Weights
 		field_t weightR = (2 * density_) / 9;	// Rest
 		field_t weightHV = density_ / 18;	// Horizontal/Vertical
 		field_t weightD = density_ / 36;		// Diagonal
 
+		//// Calculate the rest equlibrium field component
+		//populationsEq_.at(CellDirection::rest) = weightR * (2 - (3 * uSqr));
+		//// Calculate horizontal and vertical equlibrium field components
+		//populationsEq_.at(CellDirection::east) = weightHV * (2 + (6 * ux) + (6 * uxSqr) - (3 * uySqr));
+		//populationsEq_.at(CellDirection::north) = weightHV * (2 + (6 * uy) + (6 * uySqr) - (3 * uxSqr));
+		//populationsEq_.at(CellDirection::west) = weightHV * (2 - (6 * ux) + (6 * uxSqr) - (3 * uySqr));
+		//populationsEq_.at(CellDirection::south) = weightHV * (2 - (6 * uy) + (6 * uySqr) - (3 * uxSqr));
+		//// Calculate diagonal equlibrium field components
+		//populationsEq_.at(CellDirection::northEast) = weightD * (1 + (3 * (ux + uy)) + (9 * uxuy) + (3 * uSqr));
+		//populationsEq_.at(CellDirection::northWest) = weightD * (1 - (3 * (ux - uy)) - (9 * uxuy) + (3 * uSqr));
+		//populationsEq_.at(CellDirection::southWest) = weightD * (1 - (3 * (ux + uy)) + (9 * uxuy) + (3 * uSqr));
+		//populationsEq_.at(CellDirection::southEast) = weightD * (1 + (3 * (ux - uy)) - (9 * uxuy) + (3 * uSqr));
+
 		// Calculate the rest equlibrium field component
-		populationsEq_.at(CellDirection::rest) = weightR * (2 - (3 * uSqr));
+		populationsEq_[CellDirection::rest] = weightR * (2 - (3 * uSqr));
 
 		// Calculate horizontal and vertical equlibrium field components
-		populationsEq_.at(CellDirection::east) = weightHV * (2 + (6 * ux) + (6 * uxSqr) - (3 * uySqr));
-		populationsEq_.at(CellDirection::north) = weightHV * (2 + (6 * uy) + (6 * uySqr) - (3 * uxSqr));
-		populationsEq_.at(CellDirection::west) = weightHV * (2 - (6 * ux) + (6 * uxSqr) - (3 * uySqr));
-		populationsEq_.at(CellDirection::south) = weightHV * (2 - (6 * uy) + (6 * uySqr) - (3 * uxSqr));
+		populationsEq_[CellDirection::east] = weightHV * (2 + (6 * ux) + (6 * uxSqr) - (3 * uySqr));
+		populationsEq_[CellDirection::north] = weightHV * (2 + (6 * uy) + (6 * uySqr) - (3 * uxSqr));
+		populationsEq_[CellDirection::west] = weightHV * (2 - (6 * ux) + (6 * uxSqr) - (3 * uySqr));
+		populationsEq_[CellDirection::south] = weightHV * (2 - (6 * uy) + (6 * uySqr) - (3 * uxSqr));
 
 		// Calculate diagonal equlibrium field components
-		populationsEq_.at(CellDirection::northEast) = weightD * (1 + (3 * (ux + uy)) + (9 * uxuy) + (3 * uSqr));
-		populationsEq_.at(CellDirection::northWest) = weightD * (1 - (3 * (ux - uy)) - (9 * uxuy) + (3 * uSqr));
-		populationsEq_.at(CellDirection::southWest) = weightD * (1 - (3 * (ux + uy)) + (9 * uxuy) + (3 * uSqr));
-		populationsEq_.at(CellDirection::southEast) = weightD * (1 + (3 * (ux - uy)) - (9 * uxuy) + (3 * uSqr));
+		populationsEq_[CellDirection::northEast] = weightD * (1 + (3 * (ux + uy)) + (9 * uxuy) + (3 * uSqr));
+		populationsEq_[CellDirection::northWest] = weightD * (1 - (3 * (ux - uy)) - (9 * uxuy) + (3 * uSqr));
+		populationsEq_[CellDirection::southWest] = weightD * (1 - (3 * (ux + uy)) + (9 * uxuy) + (3 * uSqr));
+		populationsEq_[CellDirection::southEast] = weightD * (1 + (3 * (ux - uy)) - (9 * uxuy) + (3 * uSqr));
 
 	}
 
-	void computeForcePopulations() {
-		// TODO: Why do I have to divide by 2 in "tauFactor"???
-		const field_t tauFactor = (1. - (dt / (2 * tau))) / 2;
-		const field_t weightHV = tauFactor / 3;
-		const field_t weightD = tauFactor / 12;
-		const field_t weightR = 4 * tauFactor / 9;
-		field_t Fx = bodyForce.at(SpatialDirection::x);
-		field_t Fy = bodyForce.at(SpatialDirection::y);
-		field_t ux = velocity_.at(SpatialDirection::x);
-		field_t uy = velocity_.at(SpatialDirection::y);
-		field_t FxUx = Fx * ux;
-		field_t FxUy = Fx * uy;
-		field_t FyUy = Fy * uy;
-		field_t FyUx = Fy * ux;
+	//void computeForcePopulations() {
+	
+	//	// TODO: Why do I have to divide by 2 in "tauFactor"???
+	//	const field_t tauFactor = (1. - (dt / (2 * tau))) / 2;
+	//	const field_t weightHV = tauFactor / 3;
+	//	const field_t weightD = tauFactor / 12;
+	//	const field_t weightR = 4 * tauFactor / 9;
+	//	field_t Fx = bodyForce.at(SpatialDirection::x);
+	//	field_t Fy = bodyForce.at(SpatialDirection::y);
+	//	field_t ux = velocity_.at(SpatialDirection::x);
+	//	field_t uy = velocity_.at(SpatialDirection::y);
+	//	field_t FxUx = Fx * ux;
+	//	field_t FxUy = Fx * uy;
+	//	field_t FyUy = Fy * uy;
+	//	field_t FyUx = Fy * ux;
 
-		// Calculate horizontal and vertical force components
-		forcePopulations_.at(CellDirection::east) = weightHV * (2 * Fx + 2 * FxUx - FyUy);
-		forcePopulations_.at(CellDirection::north) = weightHV * (2 * Fy + 2 * FyUy - FxUx);
-		forcePopulations_.at(CellDirection::west) = weightHV * (-2 * Fx + 2 * FxUx - FyUy);
-		forcePopulations_.at(CellDirection::south) = weightHV * (-2 * Fy + 2 * FyUy - FxUx);
+	//	// Calculate horizontal and vertical force components
+	//	forcePopulations_.at(CellDirection::east) = weightHV * (2 * Fx + 2 * FxUx - FyUy);
+	//	forcePopulations_.at(CellDirection::north) = weightHV * (2 * Fy + 2 * FyUy - FxUx);
+	//	forcePopulations_.at(CellDirection::west) = weightHV * (-2 * Fx + 2 * FxUx - FyUy);
+	//	forcePopulations_.at(CellDirection::south) = weightHV * (-2 * Fy + 2 * FyUy - FxUx);
 
-		// Calculate diagonal force components
-		forcePopulations_.at(CellDirection::northEast) = weightD * (2 * Fx + 2 * Fy + 2 * FxUx + 3 * FyUx + 3 * FxUy + 2 * FyUy);
-		forcePopulations_.at(CellDirection::northWest) = -weightD * (2 * Fx - 2 * Fy - 2 * FxUx + 3 * FyUx + 3 * FxUy - 2 * FyUy);
-		forcePopulations_.at(CellDirection::southWest) = weightD * (-2 * Fx - 2 * Fy + 2 * FxUx + 3 * FyUx + 3 * FxUy + 2 * FyUy);
-		forcePopulations_.at(CellDirection::southEast) = -weightD * (-2 * Fx + 2 * Fy - 2 * FxUx + 3 * FyUx + 3 * FxUy - 2 * FyUy);
+	//	// Calculate diagonal force components
+	//	forcePopulations_.at(CellDirection::northEast) = weightD * (2 * Fx + 2 * Fy + 2 * FxUx + 3 * FyUx + 3 * FxUy + 2 * FyUy);
+	//	forcePopulations_.at(CellDirection::northWest) = -weightD * (2 * Fx - 2 * Fy - 2 * FxUx + 3 * FyUx + 3 * FxUy - 2 * FyUy);
+	//	forcePopulations_.at(CellDirection::southWest) = weightD * (-2 * Fx - 2 * Fy + 2 * FxUx + 3 * FyUx + 3 * FxUy + 2 * FyUy);
+	//	forcePopulations_.at(CellDirection::southEast) = -weightD * (-2 * Fx + 2 * Fy - 2 * FxUx + 3 * FyUx + 3 * FxUy - 2 * FyUy);
 
-		// Calculate rest force component
-		forcePopulations_.at(CellDirection::rest) = -weightR * (3 * FxUx + 3 * FyUy);
+	//	// Calculate rest force component
+	//	forcePopulations_.at(CellDirection::rest) = -weightR * (3 * FxUx + 3 * FyUy);
 
-		/*for (int populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
-			std::cout << "\n forcePopulations_[" << populationIndex << "] = " << forcePopulations_.at(populationIndex);
-		}
-		std::cout << "\n\n";
-		system("pause");		*/
-	}
+	//	/*for (int populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
+	//		std::cout << "\n forcePopulations_[" << populationIndex << "] = " << forcePopulations_.at(populationIndex);
+	//	}
+	//	std::cout << "\n\n";
+	//	system("pause");		*/
+	//}
 
 	/*field_t dotProduct(const std::array<field_t, nDimensions> leftVector, const std::array<field_t, nDimensions> rightVector) const{
 		field_t result = 0.;
 		for (int spatialDirection = 0; spatialDirection < nDimensions; spatialDirection++) {
 			result += leftVector.at(spatialDirection) * rightVector.at(spatialDirection);
 		}
-		return result;
-	}*/
+		return result;*/
+	
+	//}
 
 	//void computeForcePopulations() {
+	
 	//	const field_t csSqr = 1. / 3;
 	//	///*const std::array<int, nPopulations * nDimensions> c = { 1,1,0,-1,-1,-1,0,1,0, 0,1,1,1,0,-1,-1,-1,0 };*/
 	//	const std::array<field_t, nDimensions * nPopulations> c = { 1,0, 1,1, 0,1, -1,1, -1,0, -1,-1, 0,-1, 1,-1, 0,0 };
@@ -303,18 +369,28 @@ public:
 	//		std::cout << "\n forcePopulations_[" << populationIndex << "] = " << forcePopulations_.at(populationIndex);
 	//	}
 	//	//std::cout << "\n forcePopulations_[" << 8 << "] = " << forcePopulations_.at(8);
-
 	//	std::cout << "\n\n";
 	//	system("pause");		
+	
 	//}
 
 
 	//*****************************************************************************************
 	// Set functions
-	void setPopulation(const bool runIndex, const int populationIndex, const field_t fieldValue) {
-		int arrayIndex = getArrayIndex(runIndex, populationIndex);
-		populations_.at(arrayIndex) = fieldValue;
+	/*void setPopulation(const int populationIndex, const field_t population) {
+		populations_.at(currentPopulationIndexOffset_ + populationIndex) = population;
+	}*/
+	void setPopulation(const int populationIndex, const field_t population) {
+		populations_[currentPopulationIndexOffset_ + populationIndex] = population;
 	}
+
+	/*void setNextPopulation(const int populationIndex, const field_t population) {
+		populations_.at(nextPopulationIndexOffset_ + populationIndex) = population;
+	}*/
+
+	/*void setNextPopulation(const int populationIndex, const field_t population) {
+		populations_[nextPopulationIndexOffset_ + populationIndex] = population;
+	}*/
 
 	void setDensity(const field_t density) {
 		density_ = density;
@@ -328,16 +404,28 @@ public:
 	//*****************************************************************************************
 	// Get functions
 
-	Neighbours &getCellNeighbours() {
-		return neighbours_;
-	}
+	//Neighbours &getCellNeighbours() {
+	//	return neighbours_;
+	//}
 
-	const std::string getPopulationsList(const bool runIndex) const {
+	/*const std::string getPopulationsList(const bool runIndex) const {
 		std::ostringstream populationsListStream;
 
 		populationsListStream << "{" << std::setprecision(9) << populations_.at(getArrayIndex(runIndex, 0));
 		for (int i = 1; i < nPopulations; i++) {
 			populationsListStream << ", " << populations_.at(getArrayIndex(runIndex, i));
+		}
+		populationsListStream << "}";
+		return populationsListStream.str();
+	}*/
+
+	const std::string getPopulationsList(const bool runIndex) const {
+		std::ostringstream populationsListStream;
+
+		populationsListStream << "{" << std::setprecision(9) << populations_
+			[getArrayIndex(runIndex, 0)];
+		for (int i = 1; i < nPopulations; i++) {
+			populationsListStream << ", " << populations_[getArrayIndex(runIndex, i)];
 		}
 		populationsListStream << "}";
 		return populationsListStream.str();
@@ -348,7 +436,7 @@ public:
 		std::array<field_t, nPopulations> nonEquilibriumPoulation;
 		computePopulationsEq();
 		for (int populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
-			nonEquilibriumPoulation.at(populationIndex) = populations_.at(getArrayIndex(runIndex, populationIndex)) - populationsEq_.at(populationIndex);
+			nonEquilibriumPoulation.at(populationIndex) = populations_[getArrayIndex(runIndex, populationIndex)] - populationsEq_.at(populationIndex);
 		}
 
 
@@ -361,12 +449,12 @@ public:
 	}
 
 
-	const field_t getPolulation(const bool runIndex, const int populationIndex) const {
-		int arrayIndex = getArrayIndex(runIndex, populationIndex);
-		//std::cout << "getPopulation ARRAY_INDEX : " << arrayIndex << std::endl;;
-		assert(("getPopulations: arrayIndex is negative", arrayIndex >= 0));
-		assert(("getPopulations: arrayIndex to high", arrayIndex < nFieldDuplicates * nPopulations));
-		return populations_.at(arrayIndex);
+	/*const field_t getPopulation(const int populationIndex) const {
+		return populations_.at(currentPopulationIndexOffset_ + populationIndex);
+	}*/
+
+	const field_t getPopulation(const int populationIndex) const {
+		return populations_[currentPopulationIndexOffset_ + populationIndex];
 	}
 
 	const field_t getDensity() const {
@@ -407,13 +495,13 @@ public:
 	//*****************************************************************************************
 	// Print functions
 
-	void printPopulations(const bool runIndex) {
+	/*void printPopulations(const bool runIndex) {
 		std::cout << "populations at runIndex = " << runIndex << ": \n\n";
 		for (int i = 0; i < nPopulations; i++) {
 			std::cout << populations_.at(getArrayIndex(runIndex, i)) << "\t";
 		}
 		std::cout << std::endl;
-	}
+	}*/
 
 	void printPopulationsEq(const bool runIndex) {
 		std::cout << "populationsEq at runIndex = " << runIndex << ": \n\n";
@@ -423,3 +511,9 @@ public:
 		std::cout << std::endl;
 	}
 };
+
+//**************************!!!!************************
+// To be put in Cell.cpp
+bool Cell::runIndex_ = false;
+int Cell::currentPopulationIndexOffset_ = 0;
+int Cell::nextPopulationIndexOffset_ = 0;
