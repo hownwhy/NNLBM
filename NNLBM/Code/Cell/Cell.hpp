@@ -7,7 +7,7 @@
 #include <array>
 #include <memory>
 
-const enum CellType : int
+const enum CellType : uint_t
 {
 	solid = 0x00,
 	cell = 0x01,
@@ -19,7 +19,7 @@ const enum CellType : int
 // This was done for compability with the directions indexes starting at east = 0.
 // This might not be necessary.
 // TODO: Maybe find a way to use the more standard "rest = 0"? 
-const enum  CellDirection : int
+const enum  CellDirection : uint_t
 {
 	east = 0,
 	northEast = 1,
@@ -32,7 +32,7 @@ const enum  CellDirection : int
 	rest = 8
 };
 
-const enum SpatialDirection : int
+const enum SpatialDirection : uint_t
 {
 	x = 0,
 	y = 1
@@ -41,10 +41,10 @@ const enum SpatialDirection : int
 
 // TODO: Where should these static constants be? Here it will be accessible to all who include the hpp file.
 // If declareedd as a member, it has to be initialized in a cpp file...
-static const int nCellDirections = 8;
-static const int nPopulations = 9;		// Number of poulations for species
-static const int nFieldDuplicates = 2;	// Number of field "duplicats" (for temporary storage)(probably no more than 2)
-static const int nDimensions = 2;
+static const uint_t nCellDirections = 8;
+static const uint_t nPopulations = 9;		// Number of poulations for species
+static const uint_t nFieldDuplicates = 2;	// Number of field "duplicats" (for temporary storage)(probably no more than 2)
+static const uint_t nDimensions = 2;
 static const field_t dt = 1.;
 
 // poiseuille flow
@@ -62,17 +62,17 @@ class Cell {
 protected:
 	//Neighbours neighbours_;
 	std::array<std::shared_ptr<Cell>, nCellDirections> neighbours_;
-	/*std::array<field_t, nFieldDuplicates * nPopulations> populations_;*/
-	field_t populations_[nFieldDuplicates * nPopulations];
+	std::array<field_t, nFieldDuplicates * nPopulations> populations_;
+	//field_t populations_[nFieldDuplicates * nPopulations];
 	std::array<field_t, nPopulations> populationsEq_;
-	std::array<field_t, nPopulations> forcePopulations_;
+	//std::array<field_t, nPopulations> forcePopulations_;
 	std::array<field_t, nDimensions> velocity_;
 	field_t density_;
 	
 	//std::array<field_t, nPopulations> movingPlateTerm;
 	static bool runIndex_;
-	static int currentPopulationIndexOffset_;
-	static int nextPopulationIndexOffset_;
+	static uint_t currentPopulationIndexOffset_;
+	static uint_t nextPopulationIndexOffset_;
 
 
 public:
@@ -80,15 +80,15 @@ public:
 	Cell() = default;
 
 	// Returns the 1D array index which depend on the 2D (runIndex, direction).
-	inline int getArrayIndex(const bool runIndex, const int direction) const {
+	inline uint_t getArrayIndex(const bool runIndex, const uint_t direction) const {
 		return (runIndex * nPopulations) + direction;
 	}
 
 	// This function gives the opposite direction of what you put in.
 	// This is also the reason why I chose to not follow the convension
 	// having the rest direction be the 0 direction. 	
-	static const int threeHalfDirection = (3 * nCellDirections) / 2;
-	inline int reverseDirectionIndex(const int direction) const {
+	static const uint_t threeHalfDirection = (3 * nCellDirections) / 2;
+	inline uint_t reverseDirectionIndex(const uint_t direction) const {
 		return ((direction + threeHalfDirection) % nCellDirections);
 	}
 
@@ -120,7 +120,7 @@ public:
 		velocity_.at(SpatialDirection::y) = yVelocity;
 		//std::cout << "density = " << density_ << "\txVelocity = " << velocity_.at(SpatialDirection::x) << "\tyVelocity = " << velocity_.at(SpatialDirection::y) << std::endl;
 		computePopulationsEq();
-		for (int populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
+		for (uint_t populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
 			populations_[populationIndex] = populationsEq_[populationIndex];
 			populations_[populationIndex + nPopulations] = populationsEq_[populationIndex];
 		}	
@@ -152,9 +152,9 @@ public:
 		system("pause");
 	}
 	
-	/*virtual void setReceived(std::array<field_t, nFieldDuplicates * nPopulations> &sourcePopulations, const CellDirection &cellDirection) = 0;*/
+	virtual void setReceived(std::array<field_t, nFieldDuplicates * nPopulations> &sourcePopulations, const uint_t &cellDirection) = 0;
 	//virtual void setReceived(std::shared_ptr<Cell> sourceCell, const CellDirection cellDirection) = 0;
-	virtual void setReceived(field_t *sourcePopulations, const CellDirection &cellDirection) = 0;
+	//virtual void setReceived(field_t *sourcePopulations, const CellDirection &cellDirection) = 0;
 	
 
 	void computeDensity() {
@@ -320,7 +320,7 @@ public:
 	//	// Calculate rest force component
 	//	forcePopulations_.at(CellDirection::rest) = -weightR * (3 * FxUx + 3 * FyUy);
 
-	//	/*for (int populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
+	//	/*for (uint_t populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
 	//		std::cout << "\n forcePopulations_[" << populationIndex << "] = " << forcePopulations_.at(populationIndex);
 	//	}
 	//	std::cout << "\n\n";
@@ -329,7 +329,7 @@ public:
 
 	/*field_t dotProduct(const std::array<field_t, nDimensions> leftVector, const std::array<field_t, nDimensions> rightVector) const{
 		field_t result = 0.;
-		for (int spatialDirection = 0; spatialDirection < nDimensions; spatialDirection++) {
+		for (uint_t spatialDirection = 0; spatialDirection < nDimensions; spatialDirection++) {
 			result += leftVector.at(spatialDirection) * rightVector.at(spatialDirection);
 		}
 		return result;*/
@@ -347,7 +347,7 @@ public:
 	//	field_t cDotu = 0;
 	//	field_t uDotF = 0;
 
-	//	for (int populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
+	//	for (uint_t populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
 	//		std::array<field_t, nDimensions> cTemp = { c.at((2 * populationIndex) + 0) , c.at((2 * populationIndex) + 1) };
 	//		cDotF = dotProduct(cTemp, bodyForce);
 	//		cDotu = dotProduct(cTemp, velocity_);
@@ -377,18 +377,18 @@ public:
 
 	//*****************************************************************************************
 	// Set functions
-	/*void setPopulation(const int populationIndex, const field_t population) {
+	/*void setPopulation(const uint_t populationIndex, const field_t population) {
 		populations_.at(currentPopulationIndexOffset_ + populationIndex) = population;
 	}*/
-	void setPopulation(const int populationIndex, const field_t population) {
+	void setPopulation(const uint_t populationIndex, const field_t population) {
 		populations_[currentPopulationIndexOffset_ + populationIndex] = population;
 	}
 
-	/*void setNextPopulation(const int populationIndex, const field_t population) {
+	/*void setNextPopulation(const uint_t populationIndex, const field_t population) {
 		populations_.at(nextPopulationIndexOffset_ + populationIndex) = population;
 	}*/
 
-	/*void setNextPopulation(const int populationIndex, const field_t population) {
+	/*void setNextPopulation(const uint_t populationIndex, const field_t population) {
 		populations_[nextPopulationIndexOffset_ + populationIndex] = population;
 	}*/
 
@@ -412,7 +412,7 @@ public:
 		std::ostringstream populationsListStream;
 
 		populationsListStream << "{" << std::setprecision(9) << populations_.at(getArrayIndex(runIndex, 0));
-		for (int i = 1; i < nPopulations; i++) {
+		for (uint_t i = 1; i < nPopulations; i++) {
 			populationsListStream << ", " << populations_.at(getArrayIndex(runIndex, i));
 		}
 		populationsListStream << "}";
@@ -424,7 +424,7 @@ public:
 
 		populationsListStream << "{" << std::setprecision(9) << populations_
 			[getArrayIndex(runIndex, 0)];
-		for (int i = 1; i < nPopulations; i++) {
+		for (uint_t i = 1; i < nPopulations; i++) {
 			populationsListStream << ", " << populations_[getArrayIndex(runIndex, i)];
 		}
 		populationsListStream << "}";
@@ -435,13 +435,13 @@ public:
 		std::ostringstream populationsListStream;
 		std::array<field_t, nPopulations> nonEquilibriumPoulation;
 		computePopulationsEq();
-		for (int populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
+		for (uint_t populationIndex = 0; populationIndex < nPopulations; populationIndex++) {
 			nonEquilibriumPoulation.at(populationIndex) = populations_[getArrayIndex(runIndex, populationIndex)] - populationsEq_.at(populationIndex);
 		}
 
 
 		populationsListStream << "{" << std::setprecision(9) << nonEquilibriumPoulation.at(0);
-		for (int i = 1; i < nPopulations; i++) {
+		for (uint_t i = 1; i < nPopulations; i++) {
 			populationsListStream << ", " << nonEquilibriumPoulation.at(i);
 		}
 		populationsListStream << "}";
@@ -449,11 +449,11 @@ public:
 	}
 
 
-	/*const field_t getPopulation(const int populationIndex) const {
+	/*const field_t getPopulation(const uint_t populationIndex) const {
 		return populations_.at(currentPopulationIndexOffset_ + populationIndex);
 	}*/
 
-	const field_t getPopulation(const int populationIndex) const {
+	const field_t getPopulation(const uint_t populationIndex) const {
 		return populations_[currentPopulationIndexOffset_ + populationIndex];
 	}
 
@@ -483,11 +483,11 @@ public:
 	}
 
 
-	const int getNumberOfPopulations() {
+	const uint_t getNumberOfPopulations() {
 		return nPopulations;
 	}
 
-	const int getNumberOfFieldDuplicates() {
+	const uint_t getNumberOfFieldDuplicates() {
 		return nFieldDuplicates;
 	}
 
@@ -497,7 +497,7 @@ public:
 
 	/*void printPopulations(const bool runIndex) {
 		std::cout << "populations at runIndex = " << runIndex << ": \n\n";
-		for (int i = 0; i < nPopulations; i++) {
+		for (uint_t i = 0; i < nPopulations; i++) {
 			std::cout << populations_.at(getArrayIndex(runIndex, i)) << "\t";
 		}
 		std::cout << std::endl;
@@ -505,7 +505,7 @@ public:
 
 	void printPopulationsEq(const bool runIndex) {
 		std::cout << "populationsEq at runIndex = " << runIndex << ": \n\n";
-		for (int i = 0; i < nPopulations; i++) {
+		for (uint_t i = 0; i < nPopulations; i++) {
 			std::cout << populationsEq_.at(i) << "\t";
 		}
 		std::cout << std::endl;
@@ -515,5 +515,5 @@ public:
 //**************************!!!!************************
 // To be put in Cell.cpp
 bool Cell::runIndex_ = false;
-int Cell::currentPopulationIndexOffset_ = 0;
-int Cell::nextPopulationIndexOffset_ = 0;
+uint_t Cell::currentPopulationIndexOffset_ = 0;
+uint_t Cell::nextPopulationIndexOffset_ = 0;

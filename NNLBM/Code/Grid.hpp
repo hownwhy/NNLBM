@@ -12,6 +12,7 @@
 #include <memory>
 #include <vector>
 #include <thread>
+#include <execution>
 
 
 
@@ -19,27 +20,28 @@
 class Grid {
 	
 private:
-	
-
 #if TEST_TYPE & STREAM_TEST_PIPE + COUETTE_TEST + POISEUILLE_TEST
-	static const int N_X_SOLID_CELLS = 0;
-	static const int N_Y_SOLID_CELLS = 1;
+	static const uint_t N_X_SOLID_CELLS = 0;
+	static const uint_t N_Y_SOLID_CELLS = 1;
 #elif TEST_TYPE & STREAM_TEST_BOX + CAVITY_TEST
 	static const int N_X_SOLID_CELLS = 1;
 	static const int N_Y_SOLID_CELLS = 1;
 #endif
-	static const int xDimFluid = N_GRID_X_DIM_FLUID;
-	static const int yDimFluid = N_GRID_Y_DIM_FLUID;
+	static const uint_t xDimFluid = N_GRID_X_DIM_FLUID;
+	static const uint_t yDimFluid = N_GRID_Y_DIM_FLUID;
 	static const int xDimTotal = xDimFluid + 2 * N_X_SOLID_CELLS;
 	static const int yDimTotal = yDimFluid + 2 * N_Y_SOLID_CELLS;
 
 	//Geometry< xDimTotal, yDimTotal,GeometryType::pipe> geometry_;
-	std::array<int, xDimTotal * yDimTotal> geometry;
-	std::array<std::shared_ptr<Cell>, xDimTotal * yDimTotal> grid;
+	//std::array<uint_t, xDimTotal * yDimTotal> geometry;
+	std::vector<uint_t> geometry;
+	//std::array<std::shared_ptr<Cell>, xDimTotal * yDimTotal> grid;
+	std::vector < std::shared_ptr<Cell>> grid;
 	
 public:
 	Grid() {
-
+		geometry.resize(xDimTotal * yDimTotal);
+		grid.resize(xDimTotal * yDimTotal);
 	}
 	~Grid() = default;
 
@@ -53,12 +55,12 @@ public:
 	//******************************************************************************************************************
 
 	// Transforms 2D possition to 1D. A 2D grid can then be represented by a 1D array or vector.
-	inline int gridPosition(const int x_, const int y_) const {
+	inline uint_t gridPosition(const uint_t x_, const uint_t y_) const {
 		return (y_ * xDimTotal) + x_;
 	}
 
 	// Returns the grid possition for a neighbour in a given direction
-	int gridNeigbourPossition(const int x, const int y, const int direction) const {
+	uint_t gridNeigbourPossition(const int x, const int y, const uint_t direction) const {
 
 		int dx = 0;
 		int dy = 0;
@@ -140,9 +142,9 @@ public:
 	//******************************************************************************************************************
 	
 	void makePipeGeometry() {
-		int cellType = 0x00;
-		for (int y = 0; y < yDimTotal; y++) {
-			for (int x = 0; x < xDimTotal; x++) {
+		uint_t cellType = 0x00;
+		for (uint_t y = 0; y < yDimTotal; y++) {
+			for (uint_t x = 0; x < xDimTotal; x++) {
 				if (y < N_Y_SOLID_CELLS || y > yDimTotal - (1 + N_Y_SOLID_CELLS) || x < N_X_SOLID_CELLS || x > xDimTotal - (1 + N_X_SOLID_CELLS)) {
 					cellType = CellType::solid;
 				}				
@@ -160,9 +162,9 @@ public:
 	}
 
 	void makeBoxGeometry() {
-		int cellType = 0x00;
-		for (int y = 0; y < yDimTotal; y++) {
-			for (int x = 0; x < xDimTotal; x++) {
+		uint_t cellType = 0x00;
+		for (uint_t y = 0; y < yDimTotal; y++) {
+			for (uint_t x = 0; x < xDimTotal; x++) {
 
 				if (y < (0 + N_Y_SOLID_CELLS) || y > yDimTotal - (1 + N_Y_SOLID_CELLS) || (x < 0 + N_X_SOLID_CELLS) || x > xDimTotal - (1 + N_X_SOLID_CELLS)) {
 					cellType = CellType::solid;
@@ -188,8 +190,8 @@ public:
 	// TODO: Also include: Neighbour linking through constructor as the cell objects are created.
 	void makeGrid() {
 		
-		for (int y = 0; y < yDimTotal; y++) {
-			for (int x = 0; x < xDimTotal; x++) {
+		for (uint_t y = 0; y < yDimTotal; y++) {
+			for (uint_t x = 0; x < xDimTotal; x++) {
 				switch (geometry.at(gridPosition(x, y))) {
 				case CellType::solid:
 					grid.at(gridPosition(x, y)) = std::make_shared<SolidCell>();
@@ -216,10 +218,10 @@ public:
 	void linkNeighbours() const {
 		// TODO: The margins were addeed as a quick fix to avoid dealing with wall cell neighbours.
 		// Find a better solution to this problem.
-		const int xMargin = N_X_SOLID_CELLS;
-		const int yMargin = N_Y_SOLID_CELLS;
-		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
-			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
+		const uint_t xMargin = N_X_SOLID_CELLS;
+		const uint_t yMargin = N_Y_SOLID_CELLS;
+		for (uint_t y = yMargin; y < yDimTotal - yMargin; y++) {
+			for (uint_t x = xMargin; x < xDimTotal - xMargin; x++) {
 				grid.at(gridPosition(x, y))->setNeighbour(grid.at(gridNeigbourPossition(x, y, CellDirection::east)), CellDirection::east);
 				grid.at(gridPosition(x, y))->setNeighbour(grid.at(gridNeigbourPossition(x, y, CellDirection::northEast)), CellDirection::northEast);
 				grid.at(gridPosition(x, y))->setNeighbour(grid.at(gridNeigbourPossition(x, y, CellDirection::north)), CellDirection::north);
@@ -243,16 +245,16 @@ public:
 
 	// Set rho and velocity for all cells, exxept for the "ghost" cells.
 	//void gridInitialize(const bool runIndex) const {
-	//	const int xMargin = N_X_SOLID_CELLS;
-	//	const int yMargin = N_Y_SOLID_CELLS;
+	//	const uint_t xMargin = N_X_SOLID_CELLS;
+	//	const uint_t yMargin = N_Y_SOLID_CELLS;
 	//	const field_t rho = 1.0;
 	//	const field_t xVelocity = 0.0;
 	//	const field_t yVelocity = 0.0;
 	//	//const 
 	//	
-	//	for (int runIndex = 0; runIndex < 1; runIndex++) {
-	//		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
-	//			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
+	//	for (uint_t runIndex = 0; runIndex < 1; runIndex++) {
+	//		for (uint_t y = yMargin; y < yDimTotal - yMargin; y++) {
+	//			for (uint_t x = xMargin; x < xDimTotal - xMargin; x++) {
 	//				grid.at(gridPosition(x, y))->initialize(runIndex, rho, xVelocity, yVelocity);
 	//			}
 	//		}
@@ -260,15 +262,15 @@ public:
 	//}
 
 	void gridInitialize(){
-		const int xMargin = 0;// N_X_SOLID_CELLS;
-		const int yMargin = 0;// N_Y_SOLID_CELLS;
+		const uint_t xMargin = 0;// N_X_SOLID_CELLS;
+		const uint_t yMargin = 0;// N_Y_SOLID_CELLS;
 		field_t rho = 1.0;
 		field_t xVelocity = 0.0;
 		field_t yVelocity = 0.0;
 		field_t topPlateVelocity = F_LID_VELOCITY;
 		
-		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
-			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
+		for (uint_t y = yMargin; y < yDimTotal - yMargin; y++) {
+			for (uint_t x = xMargin; x < xDimTotal - xMargin; x++) {
 				if (y == 0 + yMargin) {
 					grid.at(gridPosition(x, y))->initialize(rho, topPlateVelocity, yVelocity);
 				}
@@ -285,8 +287,8 @@ public:
 	//******************************************************************************************************************
 		
 	//template<std::size_t SIZE>
-	//static void collideAndPropagate2(std::array<std::shared_ptr<Cell>, SIZE> grid3, const int beginIndex, const int endIndex) {
-	//	for (int i = beginIndex; i < endIndex; ++i)
+	//static void collideAndPropagate2(std::array<std::shared_ptr<Cell>, SIZE> grid3, const uint_t beginIndex, const uint_t endIndex) {
+	//	for (uint_t i = beginIndex; i < endIndex; ++i)
 	//	{
 	//		grid3.at(i)->collideAndPropagate();
 	//		
@@ -295,25 +297,35 @@ public:
 	//}
 
 	void collideAndPropagate(const bool runIndex) const {
-		const int xMargin = N_X_SOLID_CELLS;
-		const int yMargin = N_Y_SOLID_CELLS;
+		const uint_t xMargin = N_X_SOLID_CELLS;
+		const uint_t yMargin = N_Y_SOLID_CELLS;
 		Cell::setRunStep(runIndex);
 
-		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
-			//std::cout << std::endl;
-			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
-				//std::cout << "(" << x << "," << y << ")";
-				grid.at(gridPosition(x, y))->collideAndPropagate();
-			}
-		}
+		// C++17 parallel for loop
+		std::for_each(			
+			//std::execution::seq,
+			//std::execution::par,
+			std::execution::par_unseq,
+			grid.begin(),
+			grid.end(), 
+			[](auto cell) {cell->collideAndPropagate(); }
+		);
+
+		//for (uint_t y = yMargin; y < yDimTotal - yMargin; y++) {
+		//	//std::cout << std::endl;
+		//	for (uint_t x = xMargin; x < xDimTotal - xMargin; x++) {
+		//		//std::cout << "(" << x << "," << y << ")";
+		//		grid.at(gridPosition(x, y))->collideAndPropagate();
+		//	}
+		//}
 
 	}	
 
 	//void moveBoundary(const bool runIndex) const {
-	//	const int xMargin = N_X_SOLID_CELLS;
-	//	const int yMargin = N_Y_SOLID_CELLS;
-	//	for (int y = yMargin; y < yDimTotal - yMargin; y++) {
-	//		for (int x = xMargin; x < xDimTotal - xMargin; x++) {
+	//	const uint_t xMargin = N_X_SOLID_CELLS;
+	//	const uint_t yMargin = N_Y_SOLID_CELLS;
+	//	for (uint_t y = yMargin; y < yDimTotal - yMargin; y++) {
+	//		for (uint_t x = xMargin; x < xDimTotal - xMargin; x++) {
 	//			if (y == 0 + yMargin) {
 	//				grid.at(gridPosition(x, y))->addMovingBoundaryTerm(runIndex);
 	//				/*std::cout << "addMoving....";
@@ -324,10 +336,10 @@ public:
 	//}
 
 	//void computeAllRho(const bool runIndex) const {
-	//	const int xMargin = N_X_SOLID_CELLS;
-	//	const int yMargin = N_Y_SOLID_CELLS;
-	//	for (int y = yMargin; y < yDimTotal - yMargin; y++) {
-	//		for (int x = xMargin; x < xDimTotal - xMargin; x++) {
+	//	const uint_t xMargin = N_X_SOLID_CELLS;
+	//	const uint_t yMargin = N_Y_SOLID_CELLS;
+	//	for (uint_t y = yMargin; y < yDimTotal - yMargin; y++) {
+	//		for (uint_t x = xMargin; x < xDimTotal - xMargin; x++) {
 	//			grid.at(gridPosition(x, y))->computeDensity(runIndex);
 	//		}
 	//	}
@@ -341,8 +353,8 @@ public:
 
 	void printGeometry() const {
 		std::cout << std::endl;
-		for (int y = 0; y < yDimTotal; y++) {
-			for (int x = 0; x < xDimTotal; x++) {
+		for (uint_t y = 0; y < yDimTotal; y++) {
+			for (uint_t x = 0; x < xDimTotal; x++) {
 				std::cout << geometry.at((y * xDimTotal) + x);
 			}
 			std::cout << std::endl;
@@ -353,8 +365,8 @@ public:
 	// Cell type - print routine
 	void printCellType() const {
 		std::cout << std::endl;
-		for (int y = 0; y < yDimTotal; y++) {
-			for (int x = 0; x < xDimTotal; x++) {
+		for (uint_t y = 0; y < yDimTotal; y++) {
+			for (uint_t x = 0; x < xDimTotal; x++) {
 				if (grid.at(gridPosition(x, y)) != nullptr) {
 					std::cout << grid.at((y * xDimTotal) + x)->getCellTypeChar();
 				}
@@ -369,7 +381,7 @@ public:
 
 	//******************************************************************************************************************
 	// Neighbours - print routines
-	void printNeighboursCellType(const int x, const int y) const {
+	void printNeighboursCellType(const uint_t x, const uint_t y) const {
 		std::shared_ptr<Cell> tempCell;
 		char E, NE, N, NW, W, SW, S, SE, R;
 
@@ -450,10 +462,10 @@ public:
 	}
 
 	void printNeighboursCellType() const {
-		const int xMargin = N_X_SOLID_CELLS;
-		const int yMargin = N_Y_SOLID_CELLS;
-		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
-			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
+		const uint_t xMargin = N_X_SOLID_CELLS;
+		const uint_t yMargin = N_Y_SOLID_CELLS;
+		for (uint_t y = yMargin; y < yDimTotal - yMargin; y++) {
+			for (uint_t x = xMargin; x < xDimTotal - xMargin; x++) {
 				printNeighboursCellType(x, y);
 			}
 		}
@@ -463,7 +475,7 @@ public:
 	//******************************************************************************************************************
 	// Cell Population - print routines
 
-	void printCellPopulation(const bool runIndex, const int x, const int y) const {
+	void printCellPopulation(const bool runIndex, const uint_t x, const uint_t y) const {
 		std::cout << std::endl;
 		std::cout << grid.at(gridPosition(x, y))->getPopulation(CellDirection::northWest)
 			<< " " << grid.at(gridPosition(x, y))->getPopulation(CellDirection::north)
@@ -483,10 +495,10 @@ public:
 	}
 
 	void  printCellPopulation(const bool runIndex) const {
-		const int xMargin = N_X_SOLID_CELLS;
-		const int yMargin = N_Y_SOLID_CELLS;
-		for (int y = yMargin; y < yDimTotal - yMargin; y++) {
-			for (int x = xMargin; x < xDimTotal - xMargin; x++) {
+		const uint_t xMargin = N_X_SOLID_CELLS;
+		const uint_t yMargin = N_Y_SOLID_CELLS;
+		for (uint_t y = yMargin; y < yDimTotal - yMargin; y++) {
+			for (uint_t x = xMargin; x < xDimTotal - xMargin; x++) {
 				printCellPopulation(runIndex, x, y);
 			}
 		}
@@ -497,8 +509,8 @@ public:
 	// Cell rho - print routine
 	void printCellRho(const bool runIndex) const {
 		/*std::cout << std::endl;*/
-		for (int y = 0; y < yDimTotal; y++) {
-			for (int x = 0; x < xDimTotal; x++) {
+		for (uint_t y = 0; y < yDimTotal; y++) {
+			for (uint_t x = 0; x < xDimTotal; x++) {
 				if (grid.at(gridPosition(x, y)) != nullptr) {
 					std::cout << grid.at(gridPosition(x, y))->getDensity();
 					std::cout << " - ";
@@ -513,8 +525,8 @@ public:
 	// Cell velocity - print routine
 	void printCellVelocity(const bool runIndex) const {
 		std::cout << std::endl;
-		for (int y = 0; y < yDimTotal; y++) {
-			for (int x = 0; x < xDimTotal; x++) {
+		for (uint_t y = 0; y < yDimTotal; y++) {
+			for (uint_t x = 0; x < xDimTotal; x++) {
 				if (grid.at(gridPosition(x, y)) != nullptr) {
 					std::cout << "(" << grid.at(gridPosition(x, y))->getVelocity(SpatialDirection::x)
 						<< ","
@@ -530,9 +542,9 @@ public:
 	std::string appendGridPoplulationsList(const bool runIndex, std::string& populationLists) const {
 		//std::string populationLists;
 		populationLists += ((populationLists == "") ? "{" : ",\n\n{");
-		for (int y = 0; y < yDimTotal; y++) {
+		for (uint_t y = 0; y < yDimTotal; y++) {
 			populationLists += "{";
-			for (int x = 0; x < xDimTotal; x++) {
+			for (uint_t x = 0; x < xDimTotal; x++) {
 				populationLists += grid.at(gridPosition(x, y))->getPopulationsList(runIndex) + ((x < xDimTotal - 1) ? ",\n" : "");				
 			}
 			populationLists += ((y < yDimTotal - 1) ? "},\n\n" : "}");
@@ -545,9 +557,9 @@ public:
 	std::string appendGridNonEqPoplulationsList(const bool runIndex, std::string& populationLists) const {
 		//std::string populationLists;
 		populationLists += ((populationLists == "") ? "{" : ",\n\n{");
-		for (int y = 0; y < yDimTotal; y++) {
+		for (uint_t y = 0; y < yDimTotal; y++) {
 			populationLists += "{";
-			for (int x = 0; x < xDimTotal; x++) {
+			for (uint_t x = 0; x < xDimTotal; x++) {
 				populationLists += grid.at(gridPosition(x, y))->getNonEqPopulationsList(runIndex) + ((x < xDimTotal - 1) ? ",\n" : "");			
 			}
 			populationLists += ((y < yDimTotal - 1) ? "},\n\n" : "}");
@@ -559,8 +571,8 @@ public:
 
 
 	void appendGridVelocityList(const bool runIndex, std::string& velocityLists) const {
-		const int xMargin = N_X_SOLID_CELLS;
-		const int yMargin = N_Y_SOLID_CELLS;
+		const uint_t xMargin = N_X_SOLID_CELLS;
+		const uint_t yMargin = N_Y_SOLID_CELLS;
 		std::ostringstream velocityStringStream;
 		velocityStringStream << std::setprecision(4);
 		velocityStringStream << velocityLists;
@@ -572,9 +584,9 @@ public:
 			velocityStringStream << ",\n\n{";
 		}
 		/*velocityStringStream << velocityLists << ((velocityLists == "") ? "{" + std::to_string(xDimTotal) + "," + std::to_string(yDimTotal) + "},\n\n" + "{" : ",\n\n{");*/
-		for (int y = 0 + yMargin; y < yDimTotal - yMargin; y++) {
+		for (uint_t y = 0 + yMargin; y < yDimTotal - yMargin; y++) {
 			velocityStringStream << "{";
-			for (int x = 0 + xMargin; x < xDimTotal - xMargin; x++) {
+			for (uint_t x = 0 + xMargin; x < xDimTotal - xMargin; x++) {
 				//if (grid.at(gridPosition(x, y)) != nullptr) {
 				velocityStringStream << grid.at(gridPosition(x, y))->getVelocityList() << ((x < xDimTotal - xMargin - 1) ? ",\n" : "");
 				//}
@@ -602,9 +614,9 @@ public:
 			densityStringStream << ",\n\n{";
 		}
 		/*densityStringStream << densityLists << ((densityLists == "") ? "{" + std::to_string(xDimTotal) + "," + std::to_string(yDimTotal) + "},\n\n" + "{" : ",\n\n{");*/
-		for (int y = 0; y < yDimTotal; y++) {
+		for (uint_t y = 0; y < yDimTotal; y++) {
 			densityStringStream << "{";
-			for (int x = 0; x < xDimTotal; x++) {
+			for (uint_t x = 0; x < xDimTotal; x++) {
 				//if (grid.at(gridPosition(x, y)) != nullptr) {
 				densityStringStream << std::setprecision(12) << std::fixed << grid.at(gridPosition(x, y))->getDensity() << std::setprecision(3) << std::defaultfloat << ((x < xDimTotal - 1) ? ",\n" : "");
 				//}
@@ -620,7 +632,7 @@ public:
 
 	}
 
-	std::shared_ptr<Cell> getCell(const int x, const int y) const {
+	std::shared_ptr<Cell> getCell(const uint_t x, const uint_t y) const {
 		return grid.at(gridPosition(x, y));
 	}
 };

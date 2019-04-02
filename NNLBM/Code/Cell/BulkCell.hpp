@@ -2,7 +2,11 @@
 #include "Cell.hpp"
 #include <iostream>
 #include <chrono>
+#include <execution>
+
+#if DEBUG
 using Clock = std::chrono::high_resolution_clock;
+#endif
 
 class BulkCell : public Cell
 {
@@ -25,12 +29,11 @@ public:
 		nodeCalcCounter++;
 		auto t1 = Clock::now();
 #endif
-
-		for (int cellDirection = 0; cellDirection < nCellDirections; cellDirection++) {
+		for (uint_t cellDirection = 0; cellDirection < nCellDirections; cellDirection++) {
 			populations_[currentPopulationIndexOffset_ + cellDirection] = (1 - (dt / tau)) * populations_[currentPopulationIndexOffset_ + cellDirection] + (dt / tau) * populationsEq_[cellDirection] // Collision			
 				;// +forcePopulations_[cellDirection]; // Adding force term
 			
-			neighbours_[cellDirection]->setReceived(populations_, (CellDirection)cellDirection);
+			neighbours_[cellDirection]->setReceived(populations_, cellDirection);
 		}
 		// Updating rest population (no propagation)
 		populations_[getArrayIndex(!runIndex_, CellDirection::rest)] = (1 - (dt / tau)) * populations_[currentPopulationIndexOffset_ + CellDirection::rest] + (dt / tau) * populationsEq_[CellDirection::rest] // Collision			
@@ -56,13 +59,13 @@ public:
 		populations_.at(nextPopulationIndexOffset_ + cellDirection) = sourcePopulations.at(currentPopulationIndexOffset_ + cellDirection);
 	}*/
 
-	/*void setReceived(std::array<field_t, nFieldDuplicates * nPopulations> &sourcePopulations, const CellDirection &cellDirection) override {
-		populations_[nextPopulationIndexOffset_ + cellDirection] = sourcePopulations[currentPopulationIndexOffset_ + cellDirection];
-	}*/
-
-	void setReceived(field_t *sourcePopulations, const CellDirection &cellDirection) override {
+	void setReceived(std::array<field_t, nFieldDuplicates * nPopulations> &sourcePopulations, const uint_t &cellDirection) override {
 		populations_[nextPopulationIndexOffset_ + cellDirection] = sourcePopulations[currentPopulationIndexOffset_ + cellDirection];
 	}
+
+	/*void setReceived(field_t *sourcePopulations, const CellDirection &cellDirection) override {
+		populations_[nextPopulationIndexOffset_ + cellDirection] = sourcePopulations[currentPopulationIndexOffset_ + cellDirection];
+	}*/
 
 	char getCellTypeChar() const override {
 		return 'B';
