@@ -5,11 +5,9 @@
 #include <sstream>
 #include <string>
 //#include <exception>
-
-#if DEBUG
 #include <chrono>
 using Clock = std::chrono::high_resolution_clock;
-#endif
+
 
 // !!!!!*************************!!!!!************************************!!!!!
 // The use of hpp files for almost all code in this project is done in order to
@@ -91,10 +89,8 @@ int main() {
 	grid.printCellVelocity(runIndex);
 	system("pause");
 #endif
-	
-	const uint_t nRun = N_RUN;
-	velocityFileName = getVelocityFileName();
-	densityFileName = getDensityFileName();
+
+
 
 #if TEST_TYPE == STREAM_TEST_PIPE | STREAM_TEST_BOX
 	//grid.getCell(1, 1)->initializeVelocity(SpatialDirection::x, 0.9);
@@ -118,46 +114,55 @@ int main() {
 	//grid.getCell(2, 2)->setPopulation(CellDirection::west, 1.0);
 	//grid.getCell(5, 6)->setPopulation(0, CellDirection::west, 0.9);
 #endif
-	
 
-#if DEBUG
-	auto t1 = Clock::now();
+
+	for (int superRun = 0; superRun < N_TESTRUN_LOOPS; superRun++) {
+
+		const uint_t nRun = N_RUN;
+		velocityFileName = getVelocityFileName();
+		densityFileName = getDensityFileName();
+		uint_t velocityPrintInterval{ N_VELOCITY_PRINT_INTERVAL };
+		//uint_t populationPrintInterval{ N_POPULATION_PRINT_INTERVAL };
+
+		auto t1 = Clock::now();
+
+		for (uint_t run = 0; run < nRun; run++) {
+			if (run % velocityPrintInterval == 0) {
+				std::cout << "\r Processing: " << run << " of " << nRun;
+#if !TESTRUN
+				grid.appendGridVelocityList(runIndex, velocityString);
+				//grid.appendGridDensityList(runIndex, densityString);								
 #endif
+				velocityPrintInterval = velocityPrintInterval * 2;
+			}
 
-	uint_t velocityPrintInterval{ N_VELOCITY_PRINT_INTERVAL };
-	//uint_t populationPrintInterval{ N_POPULATION_PRINT_INTERVAL };
-	for (uint_t run = 0; run < nRun; run++) {		
-		if (run % velocityPrintInterval == 0) {
-			std::cout << "\r Processing: " << run << " of " << nRun;
-			//grid.appendGridVelocityList(runIndex, velocityString);
-			//grid.appendGridDensityList(runIndex, densityString);			
-			
-			//velocityPrintInterval = velocityPrintInterval * 2;
+			//if (run % populationPrintInterval == 0) {
+			//	std::cout << "\r Processing: " << run << " of " << nRun;
+			//	grid.appendGridPoplulationsList(runIndex, populationOutputString);
+			//	//grid.appendGridNonEqPoplulationsList(runIndex, populationOutputString);
+			//}
+
+			grid.collideAndPropagate(runIndex);
+			runIndex = !runIndex;
+			//system("pause");
 		}
-		
-		//if (run % populationPrintInterval == 0) {
-		//	std::cout << "\r Processing: " << run << " of " << nRun;
-		//	grid.appendGridPoplulationsList(runIndex, populationOutputString);
-		//	//grid.appendGridNonEqPoplulationsList(runIndex, populationOutputString);
-		//}
-			   
-		grid.collideAndPropagate(runIndex);			
-		runIndex = !runIndex;
-		//system("pause");
+
+		auto t2 = Clock::now();
+		auto nodeUpdates = N_RUN * N_GRID_X_DIM_FLUID * N_GRID_Y_DIM_FLUID;
+		auto totalTime = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
+		double mlups = nodeUpdates * 1000. / totalTime;
+		std::cout << "\nNode updates = " << nodeUpdates << std::endl;
+		std::cout << "Total time = " << totalTime << std::endl;
+		std::cout << "MLUPS = " << mlups << std::endl;		
 	}
-#if DEBUG
-	auto t2 = Clock::now();
 
-	std::cout << "\n nNodes: " << nodeCalcCounter << "\naverageLoopTime: " << averageLoopTime << "\nCachMiss: " << cacheMiss << "\nCachMiss pr. 10000 nodes: " << 10000. * cacheMiss/ (N_GRID_X_DIM_FLUID * N_GRID_Y_DIM_FLUID * N_RUN);
 	
-	std::cout << "\nMain loop time: "
-		<< std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()
-		<< " nanoseconds" << std::endl;
-	system("pause");
-#endif	
+	//system("pause");
 
-
+#if !TESTRUN
 	//populationListToFile(populationOutputString, "population.txt");
-	//velocityListToFile(velocityString, velocityFileName);
+	velocityListToFile(velocityString, velocityFileName);
 	//densityListToFile(densityString, densityFileName);
+#endif
+	system("pause");
 }

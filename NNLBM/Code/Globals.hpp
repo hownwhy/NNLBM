@@ -2,19 +2,21 @@
 #include <assert.h>
 #include <string>
 
-#define DEBUG 0
+#define TESTRUN 1
+#define N_TESTRUN_LOOPS 1
 
 //typedef double field_t;
 //typedef float field_t;
 using field_t = double;
 using uint_t = unsigned int;
 
-#if DEBUG
+
+#if TESTRUN
 unsigned long nodeCalcCounter = 0;
 double averageLoopTime = 0.;
 double accumulatedLoopTime = 0.;
 double loopTime = 0.;
-unsigned uint_t cacheMiss = 0;
+uint_t cacheMiss = 0;
 #endif
 
 
@@ -24,7 +26,11 @@ unsigned uint_t cacheMiss = 0;
 #define CAVITY_TEST			 0x08
 #define POISEUILLE_TEST		 0x10
 
-#define TEST_TYPE 0x8
+#if TESTRUN
+#define TEST_TYPE 0x08
+#else
+#define TEST_TYPE 0x10
+#endif
 
 #if TEST_TYPE == STREAM_TEST_PIPE
 const uint_t N_RUN = 20;
@@ -102,7 +108,7 @@ const field_t F_TAU = 0.5 + (3. * F_LID_VELOCITY * N_GRID_Y_DIM_FLUID / RE);
 //const field_t F_BODY_FORCE_Y = 0.;
 //const field_t F_TAU = 0.8; //0.5 + (3. * F_LID_VELOCITY * N_GRID_X_DIM_FLUID / RE);
 
-const uint_t N_RUN = 5120;
+const uint_t N_RUN = 2 * 5120;
 const uint_t N_VELOCITY_PRINT_INTERVAL = N_RUN / 10;
 const uint_t N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
 const uint_t N_GRID_X_DIM_FLUID = 129;
