@@ -1,6 +1,9 @@
 #pragma once
 #include "Globals.hpp"
-#include "Cell/Cell.hpp"
+//#include "Cell/Cell.hpp"
+//#include "Cell/CellSwapTest.hpp"
+//#include "Cell/CellOneArray.hpp"
+#include "Cell/CellOne2dArray.hpp"
 //#include "./Cell/BulkCell.hpp"
 //#include "./Cell/SolidCell.hpp"
 
@@ -12,7 +15,8 @@
 #include <memory>
 #include <vector>
 #include <thread>
-#include <execution>
+//#include <execution> // Needed for parallell for loop
+#include <algorithm> // For now to compile with GCC
 
 
 
@@ -34,9 +38,10 @@ private:
 
 	//std::array<uint_t, xDimTotal * yDimTotal> geometry;
 	std::vector<uint_t> geometry;
-	__declspec(align(64)) std::vector<Cell> grid_;
-	//std::vector<Cell> grid_;
-	__declspec(align(64)) std::vector<Cell*> fluidGridPtrs;
+	//__declspec(align(64)) std::vector<Cell> grid_;
+	std::vector<Cell> grid_;
+	//__declspec(align(64)) std::vector<Cell*> fluidGridPtrs;
+	std::vector<Cell*> fluidGridPtrs;
 
 public:
 	Grid() {
@@ -264,17 +269,36 @@ public:
 
 		//fluidGridPtrs.at(2)->collideAndPropagate();
 
-		// C++17 parallel for loop
+		//// C++17 parallel for loop
+		//std::for_each(
+		//	std::execution::seq,
+		//	//std::execution::par,
+		//	//std::execution::par_unseq,
+		//	fluidGridPtrs.begin(),
+		//	fluidGridPtrs.end(),
+		//	[](auto cellPtr) {cellPtr->collideAndPropagate(); }
+		//);
+
+		// pre c++17 for loop. To use with GCC untill c++17 is fully functional
 		std::for_each(
-			std::execution::seq,
-			//std::execution::par,
-			//std::execution::par_unseq,
 			fluidGridPtrs.begin(),
 			fluidGridPtrs.end(),
 			[](auto cellPtr) {cellPtr->collideAndPropagate(); }
 		);
 
 	}
+
+	//void swapPop() {
+	//	// C++17 parallel for loop
+	//	std::for_each(
+	//		//std::execution::seq,
+	//		//std::execution::par,
+	//		std::execution::par_unseq,
+	//		fluidGridPtrs.begin(),
+	//		fluidGridPtrs.end(),
+	//		[](auto cellPtr) {cellPtr->swapPop(); }
+	//	);		
+	//}
 
 	//******************************************************************************************************************
 	//******************************************************************************************************************
@@ -312,6 +336,21 @@ public:
 			populationLists += "{";
 			for (uint_t x = 0; x < xDimTotal; x++) {
 				populationLists += grid_.at(gridPosition(x, y)).getPopulationsList(runIndex) + ((x < xDimTotal - 1) ? ",\n" : "");
+			}
+			populationLists += ((y < yDimTotal - 1) ? "},\n\n" : "}");
+		}
+		populationLists += "}";
+
+		return populationLists;
+	}
+
+	std::string appendGridNonEqPoplulationsList(const bool runIndex, std::string& populationLists) const {
+		//std::string populationLists;
+		populationLists += ((populationLists == "") ? "{" : ",\n\n{");
+		for (uint_t y = 0; y < yDimTotal; y++) {
+			populationLists += "{";
+			for (uint_t x = 0; x < xDimTotal; x++) {
+				populationLists += grid_.at(gridPosition(x, y)).getNonEqPopulationsList(runIndex) + ((x < xDimTotal - 1) ? ",\n" : "");
 			}
 			populationLists += ((y < yDimTotal - 1) ? "},\n\n" : "}");
 		}
@@ -378,5 +417,9 @@ public:
 		densityStringStream << "}";
 
 		densityLists = densityStringStream.str();
+	}
+
+	Cell* getCell(const uint_t x, const uint_t y) {
+		return &(grid_[gridPosition(x, y)]);
 	}
 };

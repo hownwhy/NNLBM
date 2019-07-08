@@ -1,3 +1,6 @@
+// TODO: Dele populations i to array. Bruk swap. Steg for steg.
+// Minst mulig aksessering av member variable. Bruk lokale variable!
+
 #pragma once
 #include "../Globals.hpp"
 #include <iostream>
@@ -45,13 +48,6 @@ const enum SpatialDirection : uint_t
 };
 
 
-const enum FieldName : uint_t {
-	velocityX = 0,
-	velocityY = 1,
-	density = 2
-};
-
-
 static const uint_t nStreamDirections = 8;	// Number of directions populations can propagate
 static const uint_t nCellDirections = 9;		// Number of poulations for species
 //static const uint_t nFieldDuplicates = 2;	// Number of field "duplicats" (for temporary storage)(probably no more than 2)
@@ -70,42 +66,34 @@ static const std::array<uint_t, nCellDirections> reverseDirectionIndex = { 4,5,6
 // TODO: See what can be done with templates instead of virtual functions
 class Cell {
 
-private:
+private:		
 	std::array<Cell*, nStreamDirections> neighbours_;
 	//std::array<field_t, nFieldDuplicates * nCellDirections> populations_;
-	//field_t populations_[2 * nCellDirections]; // An array holding two sets of populations
-	field_t populations_[2][nCellDirections];
-
-	//field_t populationsLeft_[nCellDirections];
-	//field_t populationsRight_[nCellDirections];
-	/*field_t *populationsNow_ = p1_;
-	field_t *populationsNext_ = p2_;	*/
-
-	/*field_t populationsNow_[nCellDirections];
-	field_t populationsNext_[nCellDirections];*/
-
+	field_t populations_[2 * nCellDirections]; // An array holding two sets of populations
+	//std::array<field_t, nCellDirections> populationsEq_;
+	//field_t populationsEq_[nCellDirections];
 	//std::array<field_t, nCellDirections> forcePopulations_;
-	//std::array<field_t, nDimensions> velocity_;
-	//field_t density_;
+	std::array<field_t, nDimensions> velocity_;
+	field_t density_;
 	CellType cellType_;
 	//field_t tau;
-
+		
 	static bool runIndex_;
-	/*static std::array<uint_t, nCellDirections> currentPopulationIndexes_;
-	static std::array<uint_t, nCellDirections> nextPopulationIndexes_;*/
+	static std::array<uint_t, nCellDirections> currentPopulationIndexes_;
+	static std::array<uint_t, nCellDirections> nextPopulationIndexes_;
 
 	// Add velocity from moving walls
-	field_t solidToBulkVelocityTransfer(const field_t &population, const field_t density, const uint_t cellDirection) const {
-		/*field_t solidToBulkVelocityTransfer(const field_t &population, const field_t density_,
-			const field_t ux, const field_t uy, const uint_t cellDirection) const {*/
-
+	field_t solidToBulkVelocityTransfer(const field_t &population, const uint_t cellDirection) const {
+	/*field_t solidToBulkVelocityTransfer(const field_t &population, const field_t density_, 
+		const field_t ux, const field_t uy, const uint_t cellDirection) const {*/
+		
 		const field_t csSqrInvers = 3.;
 		// ! Rest population is EXCLUDED in the following definitions of c and w. !
 		const std::array<int, nStreamDirections * nDimensions> c = { 1,1,0,-1,-1,-1,0,1, 0,1,1,1,0,-1,-1,-1 };
 		//const std::array<field_t, nStreamDirections * nDimensions> c = { 1,1,0,-1,-1,-1,0,1, 0,1,1,1,0,-1,-1,-1 };
 		const std::array<field_t, nStreamDirections> w = { (1. / 9), (1. / 36), (1. / 9), (1. / 36), (1. / 9), (1. / 36), (1. / 9), (1. / 36) };
 		//const std::array<field_t, nStreamDirections> factors{ (6 / 9), (6 / 36), (6 / 9), (6 / 36), (6 / 9), (6 / 36), (6 / 9), (6 / 36) };
-		return population - (2. * w.at(cellDirection) * density * csSqrInvers)
+		return population - (2. * w.at(cellDirection) * density_ * csSqrInvers)
 			//return population - (factors.at(cellDirection) * density_)
 			/** ((c.at((SpatialDirection::x * nStreamDirections) + cellDirection) * ux)
 				+ (c.at((SpatialDirection::y * nStreamDirections) + cellDirection) * uy));*/
@@ -115,45 +103,44 @@ private:
 
 public:
 	Cell() {}
-	Cell(const CellType cellType) : cellType_(cellType) {}
+	Cell(const CellType cellType) : cellType_(cellType){}
 
 	~Cell() = default;
 
-
-
+	
+	
 	//*****************************************************************************************
 	// Cell initialization
 
 	void initialize(const field_t density, const field_t ux, const field_t uy) {
-	/*	density_ = density;
+		density_ = density;
 		velocity_.at(SpatialDirection::x) = ux;
-		velocity_.at(SpatialDirection::y) = uy;*/
+		velocity_.at(SpatialDirection::y) = uy;
 
 		field_t populationsEq_[nCellDirections];
 		computePopulationsEq(populationsEq_, density, ux, uy);
 		for (uint_t cellDirection = 0; cellDirection < nCellDirections; cellDirection++) {
-			populations_[0][cellDirection] = populationsEq_[cellDirection];
-			populations_[1][cellDirection] = populationsEq_[cellDirection];
+			populations_[currentPopulationIndexes_[cellDirection]] = populationsEq_[cellDirection];
+			populations_[nextPopulationIndexes_[cellDirection]] = populationsEq_[cellDirection];
 		}
 	}
 
-
+	
 	//*****************************************************************************************
 	// Do functions	
 
-	static void setRunStep(const bool runIndex) {		
-
+	static void setRunStep(const bool runIndex) {
 		runIndex_ = runIndex;
-		/*const uint_t currentPopulationIndexOffset_ = nCellDirections * runIndex;
+		const uint_t currentPopulationIndexOffset_ = nCellDirections * runIndex;
 		const uint_t nextPopulationIndexOffset_ = nCellDirections * !runIndex;
-
+		
 		currentPopulationIndexes_ = { 0 + currentPopulationIndexOffset_,	1 + currentPopulationIndexOffset_, 2 + currentPopulationIndexOffset_,
 			3 + currentPopulationIndexOffset_, 4 + currentPopulationIndexOffset_, 5 + currentPopulationIndexOffset_,
 			6 + currentPopulationIndexOffset_,	7 + currentPopulationIndexOffset_,	8 + currentPopulationIndexOffset_ };
-
+		
 		nextPopulationIndexes_ = { 0 + nextPopulationIndexOffset_,	1 + nextPopulationIndexOffset_, 2 + nextPopulationIndexOffset_,
 			3 + nextPopulationIndexOffset_, 4 + nextPopulationIndexOffset_, 5 + nextPopulationIndexOffset_,
-			6 + nextPopulationIndexOffset_,	7 + nextPopulationIndexOffset_,	8 + nextPopulationIndexOffset_ };*/
+			6 + nextPopulationIndexOffset_,	7 + nextPopulationIndexOffset_,	8 + nextPopulationIndexOffset_ };
 	}
 
 	void collideAndPropagate() {
@@ -166,44 +153,22 @@ public:
 	}
 
 	void collideAndPropagateBulk() {
-
 		
+		field_t density;
+		computeDensity(density);
+		field_t ux;
+		field_t uy;
+		computeVelocity(density, ux, uy);
 
-		/*field_t *populationsNow = populations_[runIndex_];
-		field_t *populationsNext_ = populations_[!runIndex_];*/
-
-		//field_t *populationsNow = populations_[runIndex_];
-
-		field_t fields[nDimensions + 1];
-		
-		field_t populationsNow[nCellDirections];
-		//field_t populationsNext_[nCellDirections];
-
-		for (uint_t i = 0; i < nCellDirections; i++) {
-			populationsNow[i] = populations_[runIndex_][i];
-			//populationsNext_[i] = populations_[!runIndex_][i];
-		}
-		/*fields[nCellDirections + 0] = velocity_[0];
-		fields[nCellDirections + 1] = velocity_[1];
-		fields[nCellDirections + nDimensions + 0] = density_;*/
-
-
-
-		//field_t density;
-		computeDensity(fields, populationsNow);
-		//field_t ux;
-		//field_t uy;
-		computeVelocity(fields);
-
-		field_t populationsEq[nCellDirections];
-		computePopulationsEq(populationsEq, fields);
+		field_t populationsEq_[nCellDirections];
+		computePopulationsEq(populationsEq_, density, ux, uy);
 
 		// TODO: remains after half done optimization
 		// Should probably not update these for every loop since
 		// it causes unnecessary writes to RAM
-		/*density_ = density;
+		density_ = density;
 		velocity_[SpatialDirection::x] = ux;
-		velocity_[SpatialDirection::y] = uy;*/
+		velocity_[SpatialDirection::y] = uy;
 
 		//computeForcePopulations();	
 
@@ -211,124 +176,101 @@ public:
 			//populations_[currentPopulationIndexOffset_ + cellDirection] = (1 - (dt / tau)) * populations_[currentPopulationIndexOffset_ + cellDirection] + (dt / tau) * populationsEq_[cellDirection] // Collision			
 			//	;// +forcePopulations_[cellDirection]; // Adding force term
 
-			fields[FieldName::populations][cellDirection] = oneMinusDtOverTau * populationsNow[cellDirection] + dtOverTau * populationsEq[cellDirection] // Collision			
+			populations_[currentPopulationIndexes_[cellDirection]] = oneMinusDtOverTau * populations_[currentPopulationIndexes_[cellDirection]] + dtOverTau * populationsEq_[cellDirection] // Collision			
 				;// +forcePopulations_[cellDirection]; // Adding force term
 
 			if (neighbours_[cellDirection]->getCellType() == CellType::bulk) {
-				neighbours_[cellDirection]->setReceivedBulk(populationsNow, cellDirection);
+				neighbours_[cellDirection]->setReceivedBulk(populations_, cellDirection);
 			}
 			else {
-				neighbours_[cellDirection]->setReceivedSolid(populationsNow, populations_[!runIndex_], density, cellDirection);
+				neighbours_[cellDirection]->setReceivedSolid(populations_, cellDirection);
 			}
 
 			//neighbours_[cellDirection]->setReceived(populations_, cellDirection);
 		}
-
+		
 		//// Updating rest population (NO PROPAGATION!)
 		//populations_[nextPopulationIndexOffset_ + CellDirection::rest] = (1 - (dt / tau)) * populations_[currentPopulationIndexOffset_ + CellDirection::rest] + (dt / tau) * populationsEq_[CellDirection::rest] // Collision			
 		//	;//+ forcePopulations_[CellDirection::rest]; // Adding force term
-
-		// Updating rest population (NO PROPAGATION!)
-		populations_[!runIndex_][CellDirection::rest] = oneMinusDtOverTau * populationsNow[CellDirection::rest] + dtOverTau * populationsEq[CellDirection::rest] // Collision			
-			;//+ forcePopulations_[CellDirection::rest]; // Adding force term	
 		
+		// Updating rest population (NO PROPAGATION!)
+		populations_[nextPopulationIndexes_[CellDirection::rest]] = oneMinusDtOverTau * populations_[currentPopulationIndexes_[CellDirection::rest]] + dtOverTau * populationsEq_[CellDirection::rest] // Collision			
+			;//+ forcePopulations_[CellDirection::rest]; // Adding force term	
 	}
 
-	
 	void collideAndPropagateSolid() {
-		std::cout << "\nSolidCell::collideAndProppagate()";
-		system("pause");
+		/*std::cout << "\nSolidCell::collideAndProppagate()";
+		system("pause");*/
 	}
 
-	void setReceivedBulk(const field_t *sourcePopulationsNow, const uint_t cellDirection) {		
-		populations_[!runIndex_][cellDirection] = sourcePopulationsNow[cellDirection];
+	void setReceivedBulk(const field_t *sourcePopulations, const uint_t cellDirection) {
+		populations_[nextPopulationIndexes_[cellDirection]] = sourcePopulations[currentPopulationIndexes_[cellDirection]];
 	}
 
-	/*void setReceivedBulk(Cell *sourceCell, const uint_t cellDirection) {
-		populationsNext_[cellDirection] = sourceCell->getPopulation(cellDirection);
-	}
-*/
-	void setReceivedSolid(const field_t *sourcePopulationsNow, field_t *sourcePopulationsNext, const field_t density, const uint_t cellDirection) {
-		sourcePopulationsNext[reverseDirectionIndex[cellDirection]]
-			= solidToBulkVelocityTransfer(sourcePopulationsNow[cellDirection], density, cellDirection);
+	void setReceivedSolid(field_t *sourcePopulations, const uint_t cellDirection) {
+		sourcePopulations[nextPopulationIndexes_[reverseDirectionIndex[cellDirection]]]
+			= solidToBulkVelocityTransfer(sourcePopulations[currentPopulationIndexes_[cellDirection]], cellDirection);
 	}
 
-	/*void setReceivedSolid(Cell *sourceCell, const uint_t cellDirection) {
-		sourceCell->setPopulationNext(solidToBulkVelocityTransfer(sourceCell->getPopulation(cellDirection), cellDirection), reverseDirectionIndex[cellDirection]);		
-	}*/
-
-
-	void computeDensity(field_t fields[], const field_t populationsNow[]) const {
-		fields[FieldName::density] =
-			populationsNow[CellDirection::east]
-			+ populationsNow[CellDirection::northEast]
-			+ populationsNow[CellDirection::north]
-			+ populationsNow[CellDirection::northWest]
-			+ populationsNow[CellDirection::west]
-			+ populationsNow[CellDirection::southWest]
-			+ populationsNow[CellDirection::south]
-			+ populationsNow[CellDirection::southEast]
-			+ populationsNow[CellDirection::rest];
-	}
-	void computeDensity(field_t& density, const field_t populationsNow[]) const {
-		density =
-			populationsNow[CellDirection::east]
-			+ populationsNow[CellDirection::northEast]
-			+ populationsNow[CellDirection::north]
-			+ populationsNow[CellDirection::northWest]
-			+ populationsNow[CellDirection::west]
-			+ populationsNow[CellDirection::southWest]
-			+ populationsNow[CellDirection::south]
-			+ populationsNow[CellDirection::southEast]
-			+ populationsNow[CellDirection::rest];
+		
+	void computeDensity(field_t& density_) const {
+		density_ =
+			populations_[currentPopulationIndexes_[CellDirection::east]]
+			+ populations_[currentPopulationIndexes_[CellDirection::northEast]]
+			+ populations_[currentPopulationIndexes_[CellDirection::north]]
+			+ populations_[currentPopulationIndexes_[CellDirection::northWest]]
+			+ populations_[currentPopulationIndexes_[CellDirection::west]]
+			+ populations_[currentPopulationIndexes_[CellDirection::southWest]]
+			+ populations_[currentPopulationIndexes_[CellDirection::south]]
+			+ populations_[currentPopulationIndexes_[CellDirection::southEast]]
+			+ populations_[currentPopulationIndexes_[CellDirection::rest]];
 	}
 
-	void computeVelocity(field_t fields[], const field_t populationsNow[]) const {
+	void computeVelocity(const field_t density_, field_t& ux, field_t& uy) const {
 		// Use this code if source population term is used
-		/*const field_t halfDensityInverse = 0.5 / density;
+		/*const field_t halfDensityInverse = 0.5 / density_;
 		velocity_[SpatialDirection::x] =
-			halfDensityInverse * (2 * (populationsNow[CellDirection::east]]
-				+ populationsNow[CellDirection::northEast]]
-				+ populationsNow[CellDirection::southEast]]
-				- populationsNow[CellDirection::west]]
-				- populationsNow[CellDirection::northWest]]
-				- populationsNow[CellDirection::southWest]]) + (bodyForce[SpatialDirection::x] * dt));
+			halfDensityInverse * (2 * (populations_[currentPopulationIndexes_[CellDirection::east]]
+				+ populations_[currentPopulationIndexes_[CellDirection::northEast]]
+				+ populations_[currentPopulationIndexes_[CellDirection::southEast]]
+				- populations_[currentPopulationIndexes_[CellDirection::west]]
+				- populations_[currentPopulationIndexes_[CellDirection::northWest]]
+				- populations_[currentPopulationIndexes_[CellDirection::southWest]]) + (bodyForce[SpatialDirection::x] * dt));
 
 		velocity_[SpatialDirection::y] =
-			halfDensityInverse * (2 * (populationsNow[CellDirection::north]]
-				+ populationsNow[CellDirection::northEast]]
-				+ populationsNow[CellDirection::northWest]]
-				- populationsNow[CellDirection::south]]
-				- populationsNow[CellDirection::southEast]]
-				- populationsNow[CellDirection::southWest]]) + (bodyForce[SpatialDirection::y] * dt));*/
+			halfDensityInverse * (2 * (populations_[currentPopulationIndexes_[CellDirection::north]]
+				+ populations_[currentPopulationIndexes_[CellDirection::northEast]]
+				+ populations_[currentPopulationIndexes_[CellDirection::northWest]]
+				- populations_[currentPopulationIndexes_[CellDirection::south]]
+				- populations_[currentPopulationIndexes_[CellDirection::southEast]]
+				- populations_[currentPopulationIndexes_[CellDirection::southWest]]) + (bodyForce[SpatialDirection::y] * dt));*/
 
-				// Use this code if the source population term is NOT used
-		const field_t densityInverse = 1. / fields[FieldName::density];
+		// Use this code if the source population term is NOT used
+		const field_t densityInverse = 1. / density_;
 		//velocity_[SpatialDirection::x] =
-		fields[FieldName::velocityX] = densityInverse * ((populationsNow[CellDirection::east]
-			+ populationsNow[CellDirection::northEast]
-			+ populationsNow[CellDirection::southEast]
-			- populationsNow[CellDirection::west]
-			- populationsNow[CellDirection::northWest]
-			- populationsNow[CellDirection::southWest]) + (tau * bodyForce[SpatialDirection::x] * dt));
+		ux = densityInverse * ((populations_[currentPopulationIndexes_[CellDirection::east]]
+				+ populations_[currentPopulationIndexes_[CellDirection::northEast]]
+				+ populations_[currentPopulationIndexes_[CellDirection::southEast]]
+				- populations_[currentPopulationIndexes_[CellDirection::west]]
+				- populations_[currentPopulationIndexes_[CellDirection::northWest]]
+				- populations_[currentPopulationIndexes_[CellDirection::southWest]]) + (tau * bodyForce[SpatialDirection::x] * dt));
 
 		//velocity_[SpatialDirection::y] =
-		fields[FieldName::velocityY] = densityInverse * ((populationsNow[CellDirection::north]
-			+ populationsNow[CellDirection::northEast]
-			+ populationsNow[CellDirection::northWest]
-			- populationsNow[CellDirection::south]
-			- populationsNow[CellDirection::southEast]
-			- populationsNow[CellDirection::southWest]) + (tau * bodyForce[SpatialDirection::y] * dt));
+		uy = densityInverse * ((populations_[currentPopulationIndexes_[CellDirection::north]]
+				+ populations_[currentPopulationIndexes_[CellDirection::northEast]]
+				+ populations_[currentPopulationIndexes_[CellDirection::northWest]]
+				- populations_[currentPopulationIndexes_[CellDirection::south]]
+				- populations_[currentPopulationIndexes_[CellDirection::southEast]]
+				- populations_[currentPopulationIndexes_[CellDirection::southWest]]) + (tau * bodyForce[SpatialDirection::y] * dt));
 	}
 
 	// !!!!!
 	// About 20% speed increase by passing the local array "populationsEq[]" as a function parameter 
 	// compared to using a permanently stored member array "populationsEq_[]"!
-	void computePopulationsEq(field_t populationsEq[], const field_t fields[]) const {
+	void computePopulationsEq(field_t populationsEq_[], const field_t density, const field_t ux, const field_t uy) const {
 
-		const field_t ux = fields[FieldName::velocityX];
-		const field_t uy = fields[FieldName::velocityY];
-
+		/*const field_t ux = velocity_[SpatialDirection::x];
+		const field_t uy = velocity_[SpatialDirection::y];*/
 
 		const field_t uxSqr = ux * ux;
 		const field_t uySqr = uy * uy;
@@ -352,21 +294,21 @@ public:
 		const field_t nWsE = (1 - (9 * uxuy) + (3 * uSqr));
 
 		//// Calculate the rest equlibrium field component
-		populationsEq[CellDirection::rest] = weightR * (2 - (3 * uSqr));
-
+		populationsEq_[CellDirection::rest] = weightR * (2 - (3 * uSqr));
+		
 		// Calculate horizontal and vertical equlibrium field components
-		populationsEq[CellDirection::east] = weightHV * (eastWest + (6 * ux));
-		populationsEq[CellDirection::north] = weightHV * (northSouth + (6 * uy));
-		populationsEq[CellDirection::west] = weightHV * (eastWest - (6 * ux));
-		populationsEq[CellDirection::south] = weightHV * (northSouth - (6 * uy));
+		populationsEq_[CellDirection::east] = weightHV * (eastWest + (6 * ux));
+		populationsEq_[CellDirection::north] = weightHV * (northSouth + (6 * uy));
+		populationsEq_[CellDirection::west] = weightHV * (eastWest - (6 * ux));
+		populationsEq_[CellDirection::south] = weightHV * (northSouth - (6 * uy));
 
 		// Calculate diagonal equlibrium field components
-		populationsEq[CellDirection::northEast] = weightD * (nEsW + (3 * (ux + uy)));
-		populationsEq[CellDirection::northWest] = weightD * (nWsE - (3 * (ux - uy)));
-		populationsEq[CellDirection::southWest] = weightD * (nEsW - (3 * (ux + uy)));
-		populationsEq[CellDirection::southEast] = weightD * (nWsE + (3 * (ux - uy)));
+		populationsEq_[CellDirection::northEast] = weightD * (nEsW + (3 * (ux + uy)));
+		populationsEq_[CellDirection::northWest] = weightD * (nWsE - (3 * (ux - uy)));
+		populationsEq_[CellDirection::southWest] = weightD * (nEsW - (3 * (ux + uy)));
+		populationsEq_[CellDirection::southEast] = weightD * (nWsE + (3 * (ux - uy)));
 
-
+		
 		// More explicit code (about 5% slower)
 		/*const field_t ux = velocity_[SpatialDirection::x];
 		const field_t uy = velocity_[SpatialDirection::y];
@@ -377,9 +319,9 @@ public:
 		const field_t uSqr = uxSqr + uySqr;
 
 		// Weights
-		const field_t weightR = (2 * density) / 9;	// Rest
-		const field_t weightHV = density / 18;	// Horizontal/Vertical
-		const field_t weightD = density / 36;		// Diagonal
+		const field_t weightR = (2 * density_) / 9;	// Rest
+		const field_t weightHV = density_ / 18;	// Horizontal/Vertical
+		const field_t weightD = density_ / 36;		// Diagonal
 
 		// Calculate the rest equlibrium field component
 		populationsEq_[CellDirection::rest] = weightR * (2 - (3 * uSqr));
@@ -398,8 +340,8 @@ public:
 		populationsEq_[CellDirection::southEast] = weightD * (1 + (3 * (ux - uy)) - (9 * uxuy) + (3 * uSqr));*/
 	}
 
-
-
+	
+			
 
 
 	//*****************************************************************************************
@@ -409,18 +351,13 @@ public:
 		neighbours_.at(cellDirection) = &cell;
 	}
 
-	void setPopulationNow(const field_t population, const uint_t cellDirection) {
-		field_t *populationsNow = populations_[runIndex_];
-		populationsNow[cellDirection] = population;
+	void setPopulation(const uint_t cellDirection, const field_t population) {
+		populations_[currentPopulationIndexes_[cellDirection]] = population;
 	}
 
-	/*void setPopulationNext(const field_t population, const uint_t cellDirection) {
-		populationsNext_[cellDirection] = population;
-	}*/
-
-	/*void setDensity(const field_t density) {
+	void setDensity(const field_t density) {
 		density_ = density;
-	}*/
+	}
 
 	void setVelocity(const SpatialDirection spatialDirection, const field_t velocity) {
 		velocity_.at(spatialDirection) = velocity;
@@ -431,32 +368,30 @@ public:
 	// Get functions
 
 	const std::string getPopulationsList(const bool runIndex) const {
-
-		const field_t *populationsNow = populations_[runIndex_];
 		std::ostringstream populationsListStream;
 
-		populationsListStream << "{" << std::setprecision(9) << populationsNow[0];
+		populationsListStream << "{" << std::setprecision(9) << populations_
+			[currentPopulationIndexes_[0]];
 		for (uint_t cellDirection = 1; cellDirection < nCellDirections; cellDirection++) {
-			populationsListStream << ", " << populationsNow[cellDirection];
+			populationsListStream << ", " << populations_[currentPopulationIndexes_[cellDirection]];
 		}
 		populationsListStream << "}";
 		return populationsListStream.str();
 	}
 
 	const std::string getNonEqPopulationsList(const bool runIndex) const {
-		const field_t *populationsNow = populations_[runIndex_];
 		field_t density;
-		computeDensity(density, populationsNow);
+		computeDensity(density);
 		field_t ux;
 		field_t uy;
-		computeVelocity(populationsNow, density, ux, uy);
+		computeVelocity(density, ux, uy);
 		field_t populationsEq[nCellDirections];
 		computePopulationsEq(populationsEq, density, ux, uy);
 
 		std::ostringstream populationsListStream;
-		std::array<field_t, nCellDirections> nonEquilibriumPopulations;		
+		std::array<field_t, nCellDirections> nonEquilibriumPopulations;
 		for (uint_t cellDirection = 0; cellDirection < nCellDirections; cellDirection++) {
-			nonEquilibriumPopulations.at(cellDirection) = populationsNow[cellDirection] - populationsEq[cellDirection];
+			nonEquilibriumPopulations.at(cellDirection) = populations_[currentPopulationIndexes_[cellDirection]] - populationsEq[cellDirection];
 		}
 
 		populationsListStream << "{" << std::setprecision(9) << nonEquilibriumPopulations.at(0);
@@ -468,7 +403,7 @@ public:
 	}
 
 	const field_t getPopulation(const uint_t cellDirection) const {
-		return populations_[runIndex_][cellDirection];
+		return populations_[currentPopulationIndexes_[cellDirection]];
 	}
 
 	const field_t getDensity() const {
@@ -499,7 +434,7 @@ public:
 		if (cellType_ == CellType::bulk) {
 			cellChar = 'B';
 		}
-		else if (cellType_ == CellType::solid) {
+		else if(cellType_ == CellType::solid) {
 			cellChar = 'S';
 		}
 		else {
@@ -513,10 +448,9 @@ public:
 	// Print functions
 
 	void printPopulations(const bool runIndex) {
-		const field_t *populationsNow = populations_[runIndex_];
 		std::cout << "populations at runIndex = " << runIndex << ": \n\n";
 		for (uint_t i = 0; i < nCellDirections; i++) {
-			std::cout << populationsNow[i] << "\t";
+			std::cout << populations_[currentPopulationIndexes_[i]] << "\t";
 		}
 		std::cout << std::endl;
 	}
@@ -535,9 +469,8 @@ public:
 // To be put in Cell.cpp
 
 bool Cell::runIndex_{ false };
-//std::array<uint_t, nCellDirections> Cell::currentPopulationIndexes_{ 0,1,2,3,4,5,6,7,8 };
-//std::array<uint_t, nCellDirections> Cell::nextPopulationIndexes_{ 9,10,11,12,13,14,15,16,17 };
-
+std::array<uint_t, nCellDirections> Cell::currentPopulationIndexes_{ 0,1,2,3,4,5,6,7,8 };
+std::array<uint_t, nCellDirections> Cell::nextPopulationIndexes_{ 9,10,11,12,13,14,15,16,17 };
 
 
 

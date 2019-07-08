@@ -1,4 +1,6 @@
-#pragma once
+// TODO: Flytte timeloop til grid. run -> timeStep
+
+
 #include "Globals.hpp"
 #include "Grid.hpp"
 #include "InputOutput.hpp"
@@ -26,7 +28,7 @@ int main() {
 
 	bool runIndex = 0;
 	Grid grid;
-
+	createFolders();
 	std::string populationOutputString = "";
 	std::string velocityString = "";
 	std::string velocityFileName = "";
@@ -107,21 +109,25 @@ int main() {
 	grid.getCell(2, 2)->computeVelocity(runIndex);
 	grid.getCell(2, 2)->computePopulationsEq();*/
 
+	//grid.getCell(1, 3)->setPopulationNow(1.0, CellDirection::west);
 	//grid.getCell(1, 3)->setPopulation(CellDirection::west, 1.0);
 	//grid.getCell(2, 2)->setPopulation(CellDirection::east, 1.0);
 	//grid.getCell(2, 2)->setPopulation(CellDirection::south, 1.0);
 	//grid.getCell(2, 2)->setPopulation(CellDirection::north, 1.0);
+	//grid.getCell(2, 2)->setPopulationNow(1.0, CellDirection::north);
 	//grid.getCell(2, 2)->setPopulation(CellDirection::west, 1.0);
 	//grid.getCell(5, 6)->setPopulation(0, CellDirection::west, 0.9);
 #endif
 
-
+	std::cout << "\n\n";
 	for (int superRun = 0; superRun < N_TESTRUN_LOOPS; superRun++) {
 
 		const uint_t nRun = N_RUN;
 		velocityFileName = getVelocityFileName();
 		densityFileName = getDensityFileName();
 		uint_t velocityPrintInterval{ N_VELOCITY_PRINT_INTERVAL };
+		uint_t populationPrintInterval = 1;
+
 		//uint_t populationPrintInterval{ N_POPULATION_PRINT_INTERVAL };
 
 		auto t1 = Clock::now();
@@ -136,13 +142,13 @@ int main() {
 				velocityPrintInterval = velocityPrintInterval * 2;
 			}
 
-			//if (run % populationPrintInterval == 0) {
-			//	std::cout << "\r Processing: " << run << " of " << nRun;
-			//	grid.appendGridPoplulationsList(runIndex, populationOutputString);
-			//	//grid.appendGridNonEqPoplulationsList(runIndex, populationOutputString);
-			//}
-
+			if (run % populationPrintInterval == 0) {
+				//std::cout << "\r Processing: " << run << " of " << nRun;
+				//grid.appendGridPoplulationsList(runIndex, populationOutputString);
+				//grid.appendGridNonEqPoplulationsList(runIndex, populationOutputString);
+			}			
 			grid.collideAndPropagate(runIndex);
+			//grid.swapPop();
 			runIndex = !runIndex;
 			//system("pause");
 		}
@@ -164,5 +170,7 @@ int main() {
 	velocityListToFile(velocityString, velocityFileName);
 	//densityListToFile(densityString, densityFileName);
 #endif
-	system("pause");
+	std::cout << "\n\nProgram done. \n\nPress enter to exit";
+	std::cin.get();
+	//system("pause");
 }

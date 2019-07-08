@@ -1,43 +1,19 @@
 #pragma once
 #include "Globals.hpp"
-//#include <Windows.h>
+#include <Windows.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 //#include <iomanip>
 #include <string>
 //#include <exception>
-#include <filesystem>
 
-void createFolder(std::string pathName)
-{	
-	std::filesystem::path path(pathName);
-	
-	//std::cout << "\n\nCreate output directory: " << path.string();
-	if (!std::filesystem::exists(path)) {
-		std::cout << "\nDirectory : \"" << path.string() << "\" not found.";
-		if (std::filesystem::create_directories(path))
-		{
-			std::cout << "Creating directory, FAILED! \nPress enter to exit program.";
-			std::cin.get();
-			exit(1);
-		}
-		else {
-			std::cout << " : Creating directory, OK!";
-		}
+void createFolder(std::string path)
+{
+	if (!CreateDirectory(path.c_str(), NULL))
+	{
+		return;
 	}
-	else {
-		std::cout << "\nFound directory : \"" << path.string() << "\", OK!";
-	}
-}
-
-void createFolders() {
-	//populations
-	createFolder(S_POPULATION_OUTPUT_FULL_PATH);
-	//velocity
-	createFolder(S_DIRECTORY_VELOCITY_OUTPUT);
-	//density
-	createFolder(S_DENSITY_OUTPUT_FULL_PATH);
 }
 
 void stringListToFile(const std::string string, const std::string path, const std::string filename) {
@@ -53,48 +29,44 @@ void stringListToFile(const std::string string, const std::string path, const st
 	}
 	else {
 		std::cout << "Unable to open file";
-//		system("pause");
+		system("pause");
 	}
 }
 
 void populationListToFile(const std::string string, const std::string filename) {
-	/*createFolder(S_OUTPUT_DIRECTORY_BASE);
+	createFolder(S_OUTPUT_DIRECTORY_BASE);
 	createFolder(S_OUTPUT_DIRECTORY_BASE + S_POPULATION_OUTPUT_PATH_BASE);
-	createFolder(S_POPULATION_OUTPUT_FULL_PATH);*/
+	createFolder(S_POPULATION_OUTPUT_FULL_PATH);
 
 	stringListToFile(string, S_POPULATION_OUTPUT_FULL_PATH, filename);
 }
 
 
 void velocityListToFile(const std::string string, const std::string filename) {
-	/*std::cout << "velocityListToFile: " << filename << std::endl;
 	createFolder(S_OUTPUT_DIRECTORY_BASE);
 	createFolder(S_OUTPUT_DIRECTORY_BASE + S_FLOW_TYPE);
-	createFolder(S_DIRECTORY_VELOCITY_OUTPUT);*/
+	createFolder(S_DIRECTORY_VELOCITY_OUTPUT);
 
 	stringListToFile(string, S_DIRECTORY_VELOCITY_OUTPUT, filename);
 }
 
 void densityListToFile(const std::string string, const std::string filename) {
-	/*createFolder(S_OUTPUT_DIRECTORY_BASE);
-	createFolder(S_DENSITY_OUTPUT_FULL_PATH);*/
+	createFolder(S_OUTPUT_DIRECTORY_BASE);
+	createFolder(S_DENSITY_OUTPUT_FULL_PATH);
+	std::ofstream myfile(S_DENSITY_OUTPUT_FULL_PATH + filename);
+	std::string outputString = string;
+	outputString.insert(0, "{");
+	outputString.append("}");
 
-	stringListToFile(string, S_DENSITY_OUTPUT_FULL_PATH, filename);
-
-//	std::ofstream myfile(S_DENSITY_OUTPUT_FULL_PATH + filename);
-//	std::string outputString = string;
-//	outputString.insert(0, "{");
-//	outputString.append("}");
-//
-//	if (myfile.is_open())
-//	{
-//		myfile << outputString;
-//		myfile.close();
-//	}
-//	else {
-//		std::cout << "\nUnable to open file: " << S_DENSITY_OUTPUT_FILE_NAME_BASE << filename;
-////		system("pause");
-//	}
+	if (myfile.is_open())
+	{
+		myfile << outputString;
+		myfile.close();
+	}
+	else {
+		std::cout << "\nUnable to open file: " << S_DENSITY_OUTPUT_FILE_NAME_BASE << filename;
+		system("pause");
+	}
 }
 
 std::string getVelocityFileName() {

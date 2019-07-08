@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Code\InputOutput.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Code\Globals.hpp">
       <Filter>Resource Files</Filter>
     </ClInclude>
@@ -30,7 +27,13 @@
     <ClInclude Include="Code\Grid.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Code\Cell\Cell.hpp">
+    <ClInclude Include="Code\Cell\CellOne2dArray.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\InputOutputOld.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\InputOutput.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

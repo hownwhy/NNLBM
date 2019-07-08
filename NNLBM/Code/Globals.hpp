@@ -37,13 +37,13 @@ const uint_t N_RUN = 20;
 const uint_t N_VELOCITY_PRINT_INTERVAL = 1;
 const uint_t N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
 const uint_t N_POPULATION_PRINT_INTERVAL = 1;
-const uint_t N_GRID_X_DIM_FLUID = 3;
+const uint_t N_GRID_X_DIM_FLUID = 6;
 const uint_t N_GRID_Y_DIM_FLUID = 3;
 const field_t RE = 400;
 const field_t F_LID_VELOCITY = 0.0;
 const field_t F_BODY_FORCE_X = 0.;
 const field_t F_BODY_FORCE_Y = 0.;
-const field_t F_TAU = 1;// 0.5 + (3. * F_LID_VELOCITY * N_GRID_X_DIM_FLUID / RE);
+const field_t F_TAU = 100;// 0.5 + (3. * F_LID_VELOCITY * N_GRID_X_DIM_FLUID / RE);
 #endif
 
 #if TEST_TYPE == STREAM_TEST_BOX
@@ -108,11 +108,11 @@ const field_t F_TAU = 0.5 + (3. * F_LID_VELOCITY * N_GRID_Y_DIM_FLUID / RE);
 //const field_t F_BODY_FORCE_Y = 0.;
 //const field_t F_TAU = 0.8; //0.5 + (3. * F_LID_VELOCITY * N_GRID_X_DIM_FLUID / RE);
 
-const uint_t N_RUN = 2 * 5120;
+const uint_t N_RUN = 8 * 5120;
 const uint_t N_VELOCITY_PRINT_INTERVAL = N_RUN / 10;
 const uint_t N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
-const uint_t N_GRID_X_DIM_FLUID = 129;
-const uint_t N_GRID_Y_DIM_FLUID = 129;
+const uint_t N_GRID_X_DIM_FLUID = 100;
+const uint_t N_GRID_Y_DIM_FLUID = 100;
 const field_t RE = 400;
 const field_t F_LID_VELOCITY = 0.1;
 const field_t F_BODY_FORCE_X = 0.;
@@ -122,7 +122,7 @@ const field_t F_TAU = 0.8; // 0.5 + (3. * F_LID_VELOCITY * N_GRID_X_DIM_FLUID / 
 #endif
 
 #if TEST_TYPE == POISEUILLE_TEST
-const uint_t N_RUN = 1<<17;
+const uint_t N_RUN = 1<<19;
 const uint_t N_VELOCITY_PRINT_INTERVAL = 2;
 const uint_t N_DENSITY_PRINT_INTERVAL = N_VELOCITY_PRINT_INTERVAL;
 const uint_t N_GRID_X_DIM_FLUID = 2;
